@@ -1,0 +1,263 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}{{ project.name }} - Project Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">{{ project.name }}</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'all_projects' %}">Projects</a></li>
+                    <li class="breadcrumb-item active">{{ project.name }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'edit_project' project.id %}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit Project
+            </a>
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteProjectModal">
+                <i class="fas fa-trash"></i> Delete Project
+            </button>
+        </div>
+    </div>
+
+    <!-- Project Overview Section -->
+    <div class="row">
+        <!-- Left Column - Project Details -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Project Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="small text-muted">Project Code</label>
+                                <div class="fw-bold">{{ project.code }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="small text-muted">Location</label>
+                                <div class="fw-bold">{{ project.location }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="small text-muted">Project Manager</label>
+                                <div class="fw-bold">{{ project.manager.get_full_name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="small text-muted">Start Date</label>
+                                <div class="fw-bold">{{ project.start_date|date:"F d, Y" }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="small text-muted">End Date</label>
+                                <div class="fw-bold">{{ project.end_date|date:"F d, Y" }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="small text-muted">Total Budget</label>
+                                <div class="fw-bold">${{ project.total_budget|floatformat:2 }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted">Description</label>
+                        <div>{{ project.description|default:"No description provided"|linebreaks }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Progress -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Project Progress</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>Overall Progress</div>
+                            <div class="fw-bold">{{ project.progress }}%</div>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar" role="progressbar" style="width: {{ project.progress }}%"></div>
+                        </div>
+                    </div>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center">
+                                <div class="small text-muted mb-1">Days Remaining</div>
+                                <div class="h4 mb-0">{{ days_remaining }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center">
+                                <div class="small text-muted mb-1">Tasks Completed</div>
+                                <div class="h4 mb-0">{{ completed_tasks }}/{{ total_tasks }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center">
+                                <div class="small text-muted mb-1">Budget Used</div>
+                                <div class="h4 mb-0">{{ budget_used }}%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Activities</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_activities %}
+                    <div class="timeline">
+                        {% for activity in recent_activities %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-0">{{ activity.title }}</h6>
+                                <div class="text-muted small">{{ activity.timestamp|timesince }} ago</div>
+                                <div>{{ activity.description }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                        <h6>No Recent Activities</h6>
+                        <p class="text-muted">Activities will appear here as they occur</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Quick Stats and Actions -->
+        <div class="col-lg-4">
+            <!-- Project Status -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">Project Status</h6>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-{{ project.status_color }} fs-6 me-2">{{ project.get_status_display }}</span>
+                        <span class="text-muted">Updated {{ project.updated_at|timesince }} ago</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="small text-muted mb-1">Material Items</div>
+                        <div class="h5 mb-0">{{ material_count }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="small text-muted mb-1">Team Members</div>
+                        <div class="h5 mb-0">{{ team_members_count }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="small text-muted mb-1">Documents</div>
+                        <div class="h5 mb-0">{{ document_count }}</div>
+                    </div>
+                    <div>
+                        <div class="small text-muted mb-1">Issues</div>
+                        <div class="h5 mb-0">{{ open_issues_count }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="fas fa-tasks"></i> Add Task
+                        </a>
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus"></i> Add Team Member
+                        </a>
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="fas fa-file-upload"></i> Upload Document
+                        </a>
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="fas fa-exclamation-circle"></i> Report Issue
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Project Modal -->
+<div class="modal fade" id="deleteProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete project "{{ project.name }}"? This action cannot be undone.</p>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Warning: All associated data will be permanently deleted.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'delete_project' project.id %}" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Project</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom CSS for Timeline -->
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #0d6efd;
+    border: 2px solid #fff;
+}
+.timeline-item:not(:last-child):before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 12px;
+    height: 100%;
+    width: 1px;
+    background: #dee2e6;
+}
+</style>
+{% endblock %}

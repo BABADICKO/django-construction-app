@@ -1,0 +1,53 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="modern-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Material Subcategories</h5>
+            <a href="{% url 'subcategory_create' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Add Subcategory
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Subcategory</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subcategory in subcategories %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-primary">{{ subcategory.category.name }}</span>
+                            </td>
+                            <td>{{ subcategory.name }}</td>
+                            <td>{{ subcategory.description|truncatewords:20 }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'subcategory_edit' subcategory.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'subcategory_delete' subcategory.pk %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No subcategories found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}Record Material Consumption{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Record Material Consumption</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Material and Project Selection -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="material" class="form-label">Material*</label>
+                            <select class="form-select" id="material" name="material" required>
+                                <option value="">Select a material</option>
+                                {% for mat in materials %}
+                                <option value="{{ mat.id }}" 
+                                    {% if request.GET.material == mat.id|stringformat:"s" %}selected{% endif %}
+                                    data-unit="{{ mat.unit }}" 
+                                    data-stock="{{ mat.current_stock }}"
+                                    data-price="{{ mat.unit_price }}">
+                                    {{ mat.name }} ({{ mat.code }}) - Stock: {{ mat.current_stock }} {{ mat.unit }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a material.
+                            </div>
+                            <small id="stock-info" class="form-text text-muted"></small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="project" class="form-label">Project*</label>
+                            <select class="form-select" id="project" name="project" required>
+                                <option value="">Select a project</option>
+                                {% for proj in projects %}
+                                <option value="{{ proj.id }}">{{ proj.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a project.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quantity and Date -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity*</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="quantity" name="quantity"
+                                       min="0.01" step="0.01" required>
+                                <span class="input-group-text" id="unit-display"></span>
+                                <div class="invalid-feedback">
+                                    Please enter a valid quantity.
+                                </div>
+                            </div>
+                            <div id="quantity-warning" class="text-danger small d-none">
+                                Warning: This quantity exceeds available stock!
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="date" class="form-label">Consumption Date*</label>
+                            <input type="date" class="form-control" id="date" name="date"
+                                   value="{{ today|date:'Y-m-d' }}" required>
+                            <div class="invalid-feedback">
+                                Please select a consumption date.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unit Price and Notes -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="unit_price" class="form-label">Unit Price*</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="unit_price" name="unit_price"
+                                       min="0.01" step="0.01" required>
+                                <div class="invalid-feedback">
+                                    Please enter a valid unit price.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'material_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Record Consumption
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize Select2
+    $(document).ready(function() {
+        $('.form-select').select2({
+            theme: 'bootstrap-5'
+        });
+
+        // Set default values from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const materialId = urlParams.get('material');
+        if (materialId) {
+            $('#material').val(materialId).trigger('change');
+        }
+
+        // Update material info when selection changes
+        $('#material').on('change', function() {
+            const selectedOption = $(this).find('option:selected');
+            const unit = selectedOption.data('unit');
+            const stock = selectedOption.data('stock');
+            const price = selectedOption.data('price');
+
+            // Update unit display
+            $('#unit-display').text(unit || '');
+
+            // Update stock info
+            if (stock !== undefined) {
+                $('#stock-info').text(`Available stock: ${stock} ${unit}`);
+            } else {
+                $('#stock-info').text('');
+            }
+
+            // Set default unit price
+            if (price !== undefined) {
+                $('#unit_price').val(price);
+            }
+        });
+
+        // Check quantity against stock
+        $('#quantity').on('input', function() {
+            const quantity = parseFloat($(this).val());
+            const selectedOption = $('#material option:selected');
+            const stock = selectedOption.data('stock');
+
+            if (stock !== undefined && quantity > stock) {
+                $('#quantity-warning').removeClass('d-none');
+            } else {
+                $('#quantity-warning').addClass('d-none');
+            }
+        });
+    });
+
+    // Form validation
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+
+                    // Additional validation for quantity
+                    const quantity = parseFloat($('#quantity').val());
+                    const selectedOption = $('#material option:selected');
+                    const stock = selectedOption.data('stock');
+
+                    if (stock !== undefined && quantity > stock) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        $('#quantity-warning').removeClass('d-none');
+                    }
+
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+</script>
+{% endblock %}

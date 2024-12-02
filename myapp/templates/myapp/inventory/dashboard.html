@@ -1,0 +1,81 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Inventory Dashboard</h2>
+    
+    <!-- Summary Cards -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Materials</h5>
+                    <h2 class="card-text">{{ total_materials }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white {% if low_stock_materials > 0 %}bg-warning{% else %}bg-success{% endif %}">
+                <div class="card-body">
+                    <h5 class="card-title">Low Stock Items</h5>
+                    <h2 class="card-text">{{ low_stock_materials }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <a href="{% url 'myapp:stock_entry' %}" class="btn btn-primary me-2">New Stock Entry</a>
+            <a href="{% url 'myapp:material_transaction' %}" class="btn btn-success me-2">Record Transaction</a>
+            <a href="{% url 'myapp:warehouse_create' %}" class="btn btn-info">Add Warehouse</a>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Recent Transactions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Material</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>Project</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in recent_transactions %}
+                                <tr>
+                                    <td>{{ transaction.date }}</td>
+                                    <td>{{ transaction.material.name }}</td>
+                                    <td>
+                                        <span class="badge {% if transaction.transaction_type == 'RECEIPT' %}bg-success{% else %}bg-warning{% endif %}">
+                                            {{ transaction.transaction_type }}
+                                        </span>
+                                    </td>
+                                    <td>{{ transaction.quantity }} {{ transaction.material.unit }}</td>
+                                    <td>{{ transaction.project.name|default:"-" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No recent transactions</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

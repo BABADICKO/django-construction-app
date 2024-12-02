@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All Construction Reports</title>
+    <style>
+        /* Copy the same styles from home.html and add: */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .export-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .export-btn:hover {
+            background-color: #0b7dda;
+        }
+        .nav-btn {
+            background-color: #555;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>All Construction Reports</h1>
+        
+        <a href="{% url 'home' %}" class="nav-btn">Back to Form</a>
+        <a href="{% url 'export_excel' %}" class="export-btn">Export to Excel</a>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Cement (tons)</th>
+                    <th>Iron (tons)</th>
+                    <th>Employees</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.date }}</td>
+                    <td>{{ report.cement_consumed }}</td>
+                    <td>{{ report.iron_consumed }}</td>
+                    <td>{{ report.num_employees }}</td>
+                    <td>{{ report.notes }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

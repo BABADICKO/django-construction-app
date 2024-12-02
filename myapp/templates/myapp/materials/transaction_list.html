@@ -1,0 +1,99 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}Material Transactions{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Material Transactions</h2>
+        <a href="{% url 'myapp:transaction_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Transaction
+        </a>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control" placeholder="Search transactions..." value="{{ request.GET.q }}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="type" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Types</option>
+                        <option value="DELIVERY" {% if current_type == 'DELIVERY' %}selected{% endif %}>Delivery</option>
+                        <option value="CONSUMPTION" {% if current_type == 'CONSUMPTION' %}selected{% endif %}>Consumption</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Material</th>
+                            <th>Project</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.date|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="badge {% if transaction.transaction_type == 'DELIVERY' %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ transaction.get_transaction_type_display }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.material.name }}</td>
+                            <td>{{ transaction.project.name }}</td>
+                            <td>{{ transaction.quantity }} {{ transaction.material.unit }}</td>
+                            <td>${{ transaction.unit_price|floatformat:2 }}</td>
+                            <td>${{ transaction.total_price|floatformat:2 }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'myapp:transaction_detail' transaction.pk %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'myapp:transaction_edit' transaction.pk %}" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'myapp:transaction_delete' transaction.pk %}" 
+                                       class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                No transactions found. Create a new transaction to get started!
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

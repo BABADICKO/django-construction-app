@@ -1,0 +1,76 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Cost Management Dashboard</h2>
+    
+    <!-- Summary Cards -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Cost Centers</h5>
+                    <h2 class="card-text">{{ total_cost_centers }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Cost Items</h5>
+                    <h2 class="card-text">{{ total_cost_items }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <a href="{% url 'myapp:bom_list' %}" class="btn btn-primary me-2">View BOM</a>
+            <a href="{% url 'myapp:cost_analysis' %}" class="btn btn-info">Cost Analysis</a>
+        </div>
+    </div>
+
+    <!-- Recent Costs -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Recent Costs</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Cost Center</th>
+                                    <th>Description</th>
+                                    <th>Type</th>
+                                    <th>Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cost in recent_costs %}
+                                <tr>
+                                    <td>{{ cost.date }}</td>
+                                    <td>{{ cost.cost_center.name }}</td>
+                                    <td>{{ cost.description }}</td>
+                                    <td>{{ cost.get_cost_type_display }}</td>
+                                    <td>${{ cost.total_cost }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No recent costs</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

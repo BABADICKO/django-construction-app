@@ -1,0 +1,195 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Record Material Delivery</h2>
+        <a href="{% url 'material_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Materials
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" class="row g-3">
+                {% csrf_token %}
+                
+                <!-- Material Selection Section -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="material" class="form-label">Material *</label>
+                        <select class="form-select" id="material" name="material" required
+                                {% if material %}disabled{% endif %}>
+                            <option value="">Select Material</option>
+                            {% for mat in materials %}
+                            <option value="{{ mat.id }}" 
+                                    {% if material.id == mat.id %}selected{% endif %}
+                                    data-unit="{{ mat.unit }}"
+                                    data-price="{{ mat.unit_price }}">
+                                {{ mat.name }} ({{ mat.code }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if material %}
+                        <input type="hidden" name="material" value="{{ material.id }}">
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="project" class="form-label">Project *</label>
+                        <select class="form-select" id="project" name="project" required>
+                            <option value="">Select Project</option>
+                            {% for proj in projects %}
+                            <option value="{{ proj.id }}">{{ proj.name }} ({{ proj.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="supplier" class="form-label">Supplier *</label>
+                        <input type="text" class="form-control" id="supplier" name="supplier" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="invoice_number" class="form-label">Invoice Number *</label>
+                        <input type="text" class="form-control" id="invoice_number" name="invoice_number" required>
+                    </div>
+                </div>
+
+                <!-- Quantity and Price Section -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="delivery_date" class="form-label">Delivery Date *</label>
+                        <input type="date" class="form-control" id="delivery_date" name="delivery_date" 
+                               value="{% now 'Y-m-d' %}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity *</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="quantity" name="quantity" 
+                                   step="0.01" min="0" required>
+                            <span class="input-group-text unit-display">Unit</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="unit_price" class="form-label">Unit Price *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="unit_price" name="unit_price" 
+                                   step="0.01" min="0" required>
+                            <button type="button" class="btn btn-outline-secondary" id="use-default-price">
+                                Use Default
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            Default price: $<span id="default-price">-</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4"
+                                  placeholder="Add any additional notes about this delivery"></textarea>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="col-12">
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="total-calculation">
+                            <h5 class="mb-0">Total Amount: $<span id="total-amount">0.00</span></h5>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="reset" class="btn btn-secondary">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Record Delivery
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const materialSelect = document.getElementById('material');
+        const quantityInput = document.getElementById('quantity');
+        const unitPriceInput = document.getElementById('unit_price');
+        const useDefaultPriceBtn = document.getElementById('use-default-price');
+        const defaultPriceSpan = document.getElementById('default-price');
+        const totalAmountSpan = document.getElementById('total-amount');
+        const unitDisplay = document.querySelector('.unit-display');
+        const form = document.querySelector('form');
+
+        // Update material info when selection changes
+        function updateMaterialInfo() {
+            const selectedOption = materialSelect.options[materialSelect.selectedIndex];
+            if (selectedOption.value) {
+                const unit = selectedOption.dataset.unit;
+                const defaultPrice = selectedOption.dataset.price;
+                unitDisplay.textContent = unit;
+                defaultPriceSpan.textContent = defaultPrice;
+                useDefaultPriceBtn.disabled = false;
+            } else {
+                unitDisplay.textContent = 'Unit';
+                defaultPriceSpan.textContent = '-';
+                useDefaultPriceBtn.disabled = true;
+            }
+            calculateTotal();
+        }
+
+        // Calculate total amount
+        function calculateTotal() {
+            const quantity = parseFloat(quantityInput.value) || 0;
+            const unitPrice = parseFloat(unitPriceInput.value) || 0;
+            const total = (quantity * unitPrice).toFixed(2);
+            totalAmountSpan.textContent = total;
+        }
+
+        // Event listeners
+        materialSelect.addEventListener('change', updateMaterialInfo);
+        quantityInput.addEventListener('input', calculateTotal);
+        unitPriceInput.addEventListener('input', calculateTotal);
+        
+        useDefaultPriceBtn.addEventListener('click', function() {
+            const selectedOption = materialSelect.options[materialSelect.selectedIndex];
+            if (selectedOption.value) {
+                unitPriceInput.value = selectedOption.dataset.price;
+                calculateTotal();
+            }
+        });
+
+        // Form validation
+        form.addEventListener('submit', function(event) {
+            const quantity = parseFloat(quantityInput.value);
+            const unitPrice = parseFloat(unitPriceInput.value);
+            
+            if (quantity <= 0) {
+                alert('Quantity must be greater than 0');
+                event.preventDefault();
+                return;
+            }
+            
+            if (unitPrice <= 0) {
+                alert('Unit price must be greater than 0');
+                event.preventDefault();
+                return;
+            }
+        });
+
+        // Initial update
+        updateMaterialInfo();
+    });
+</script>
+{% endblock %}
+{% endblock %}

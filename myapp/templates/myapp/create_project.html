@@ -1,0 +1,172 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}Create New Project{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+<li class="breadcrumb-item"><a href="{% url 'all_projects' %}">Projects</a></li>
+<li class="breadcrumb-item active">Create Project</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="dashboard-card">
+                <h2><i class="fas fa-plus-circle"></i> Create New Project</h2>
+                <hr>
+                
+                <form method="POST" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    <div class="row">
+                        <!-- Project Basic Information -->
+                        <div class="col-md-8">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Basic Information</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="name" class="form-label">Project Name*</label>
+                                            <input type="text" class="form-control" id="name" name="name" required>
+                                            <div class="invalid-feedback">
+                                                Please provide a project name.
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="code" class="form-label">Project Code*</label>
+                                            <input type="text" class="form-control" id="code" name="code" required>
+                                            <div class="invalid-feedback">
+                                                Please provide a project code.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">Description</label>
+                                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="location" class="form-label">Location*</label>
+                                            <input type="text" class="form-control" id="location" name="location" required>
+                                            <div class="invalid-feedback">
+                                                Please provide a project location.
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="manager" class="form-label">Project Manager*</label>
+                                            <select class="form-select" id="manager" name="manager" required>
+                                                <option value="">Choose...</option>
+                                                {% for user in users %}
+                                                <option value="{{ user.id }}">{{ user.get_full_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="invalid-feedback">
+                                                Please select a project manager.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Project Details -->
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Timeline & Status</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="start_date" class="form-label">Start Date*</label>
+                                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                                        <div class="invalid-feedback">
+                                            Please provide a start date.
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="end_date" class="form-label">Expected End Date*</label>
+                                        <input type="date" class="form-control" id="end_date" name="end_date" required>
+                                        <div class="invalid-feedback">
+                                            Please provide an expected end date.
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="status" class="form-label">Status*</label>
+                                        <select class="form-select" id="status" name="status" required>
+                                            <option value="PLANNING">Planning</option>
+                                            <option value="ONGOING">Ongoing</option>
+                                            <option value="COMPLETED">Completed</option>
+                                            <option value="ON_HOLD">On Hold</option>
+                                            <option value="CANCELLED">Cancelled</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="total_budget" class="form-label">Total Budget*</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="total_budget" name="total_budget" required>
+                                            <div class="invalid-feedback">
+                                                Please provide a budget amount.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <hr>
+                            <div class="d-flex justify-content-end">
+                                <a href="{% url 'all_projects' %}" class="btn btn-secondary me-2">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Create Project
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form validation
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+
+    // Date validation
+    document.getElementById('end_date').addEventListener('change', function() {
+        var startDate = new Date(document.getElementById('start_date').value);
+        var endDate = new Date(this.value);
+        
+        if (endDate < startDate) {
+            this.setCustomValidity('End date must be after start date');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+</script>
+{% endblock %}

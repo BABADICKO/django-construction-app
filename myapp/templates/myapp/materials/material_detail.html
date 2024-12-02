@@ -1,0 +1,250 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ material.name }} - Material Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Material Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="mb-0">{{ material.name }}</h1>
+            <p class="text-muted">Code: {{ material.code }}</p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'material_edit' material.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="{% url 'record_consumption' %}?material={{ material.id }}" class="btn btn-outline-warning">
+                <i class="fas fa-minus-circle"></i> Record Consumption
+            </a>
+            <a href="{% url 'record_delivery' %}?material={{ material.id }}" class="btn btn-outline-success">
+                <i class="fas fa-plus-circle"></i> Record Delivery
+            </a>
+        </div>
+    </div>
+
+    <!-- Material Details -->
+    <div class="row">
+        <!-- Left Column - Basic Info -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Basic Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Category:</th>
+                            <td>{{ material.category.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Unit:</th>
+                            <td>{{ material.unit }}</td>
+                        </tr>
+                        <tr>
+                            <th>Unit Price:</th>
+                            <td>${{ material.unit_price|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description:</th>
+                            <td>{{ material.description|default:"N/A" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Column - Stock Info -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Stock Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Current Stock</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="mb-0">{{ material.current_stock }} {{ material.unit }}</h3>
+                            <span class="badge {% if stock_alert %}bg-danger{% else %}bg-success{% endif %}">
+                                {{ stock_status }}
+                            </span>
+                        </div>
+                        <div class="progress mt-2" style="height: 10px;">
+                            <div class="progress-bar {% if stock_alert %}bg-danger{% else %}bg-success{% endif %}"
+                                role="progressbar"
+                                style="width: {{ material.current_stock|div:material.minimum_stock|mul:100 }}%">
+                            </div>
+                        </div>
+                        <small class="text-muted">Minimum Stock: {{ material.minimum_stock }} {{ material.unit }}</small>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col">
+                            <h6>Total Delivered</h6>
+                            <h4>{{ total_delivered|default:0 }} {{ material.unit }}</h4>
+                        </div>
+                        <div class="col">
+                            <h6>Total Consumed</h6>
+                            <h4>{{ total_consumed|default:0 }} {{ material.unit }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Price Info -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Price Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col">
+                            <h6>Current Price</h6>
+                            <h4>${{ material.unit_price|floatformat:2 }}</h4>
+                            <small class="text-muted">per {{ material.unit }}</small>
+                        </div>
+                        <div class="col">
+                            <h6>Average Price</h6>
+                            <h4>${{ avg_price|floatformat:2 }}</h4>
+                            <small class="text-muted">last 5 deliveries</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <h6>Total Stock Value</h6>
+                        <h3>${{ material.current_stock|mul:material.unit_price|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="row">
+        <!-- Recent Deliveries -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Deliveries</h5>
+                    <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price</th>
+                                    <th>Supplier</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for delivery in recent_deliveries %}
+                                <tr>
+                                    <td>{{ delivery.delivery_date|date:"Y-m-d" }}</td>
+                                    <td>{{ delivery.quantity }} {{ material.unit }}</td>
+                                    <td>${{ delivery.unit_price|floatformat:2 }}</td>
+                                    <td>{{ delivery.supplier }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No recent deliveries</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Consumptions -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Consumptions</h5>
+                    <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Project</th>
+                                    <th>Quantity</th>
+                                    <th>Recorded By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for consumption in recent_consumptions %}
+                                <tr>
+                                    <td>{{ consumption.date|date:"Y-m-d" }}</td>
+                                    <td>
+                                        <a href="{% url 'project_detail' consumption.project.id %}">
+                                            {{ consumption.project.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ consumption.quantity }} {{ material.unit }}</td>
+                                    <td>{{ consumption.recorded_by.get_full_name }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No recent consumptions</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Using This Material -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Projects Using This Material</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for project in projects_using %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <a href="{% url 'project_detail' project.id %}">{{ project.name }}</a>
+                            </h6>
+                            <p class="card-text small text-muted">
+                                Status: <span class="badge bg-{{ project.get_status_display|lower }}">
+                                    {{ project.get_status_display }}
+                                </span>
+                            </p>
+                            <p class="card-text">
+                                Total Consumed: {{ project.materialconsumption_set.filter(material=material).aggregate.total_quantity|default:0 }} {{ material.unit }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col">
+                    <p class="text-center text-muted">No projects are currently using this material.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Add any JavaScript for charts or dynamic functionality here
+</script>
+{% endblock %}

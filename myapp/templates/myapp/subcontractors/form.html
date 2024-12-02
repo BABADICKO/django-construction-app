@@ -1,0 +1,101 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ action }} Subcontractor</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group mt-3">
+                            {{ form.name.label_tag }}
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.code.label_tag }}
+                            {{ form.code }}
+                            {% if form.code.errors %}
+                                <div class="text-danger">{{ form.code.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.contact_person.label_tag }}
+                            {{ form.contact_person }}
+                            {% if form.contact_person.errors %}
+                                <div class="text-danger">{{ form.contact_person.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.email.label_tag }}
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.phone.label_tag }}
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <div class="text-danger">{{ form.phone.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.address.label_tag }}
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                                <div class="text-danger">{{ form.address.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.specialization.label_tag }}
+                            {{ form.specialization }}
+                            {% if form.specialization.errors %}
+                                <div class="text-danger">{{ form.specialization.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.tax_id.label_tag }}
+                            {{ form.tax_id }}
+                            {% if form.tax_id.errors %}
+                                <div class="text-danger">{{ form.tax_id.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.status.label_tag }}
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.rating.label_tag }}
+                            {{ form.rating }}
+                            {% if form.rating.errors %}
+                                <div class="text-danger">{{ form.rating.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.notes.label_tag }}
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">{{ action }}</button>
+                            <a href="{% url 'myapp:subcontractor_list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

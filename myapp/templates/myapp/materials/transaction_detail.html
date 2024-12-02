@@ -1,0 +1,92 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}Transaction Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Transaction Details</h3>
+                    <div>
+                        <a href="{% url 'myapp:transaction_edit' transaction.pk %}" class="btn btn-sm btn-outline-primary me-2">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'myapp:transaction_delete' transaction.pk %}" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Basic Information</h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Type</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge {% if transaction.transaction_type == 'DELIVERY' %}bg-success{% else %}bg-warning{% endif %}">
+                                        {{ transaction.get_transaction_type_display }}
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Date</dt>
+                                <dd class="col-sm-8">{{ transaction.date|date:"M d, Y" }}</dd>
+
+                                <dt class="col-sm-4">Project</dt>
+                                <dd class="col-sm-8">{{ transaction.project.name }}</dd>
+
+                                <dt class="col-sm-4">Material</dt>
+                                <dd class="col-sm-8">{{ transaction.material.name }}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Quantity & Price</h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Quantity</dt>
+                                <dd class="col-sm-8">{{ transaction.quantity }} {{ transaction.material.unit }}</dd>
+
+                                <dt class="col-sm-4">Unit Price</dt>
+                                <dd class="col-sm-8">${{ transaction.unit_price|floatformat:2 }}</dd>
+
+                                <dt class="col-sm-4">Total Price</dt>
+                                <dd class="col-sm-8">${{ transaction.total_price|floatformat:2 }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    {% if transaction.transaction_type == 'DELIVERY' %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5>Supplier Information</h5>
+                            <dl class="row">
+                                <dt class="col-sm-2">Supplier</dt>
+                                <dd class="col-sm-10">{{ transaction.supplier|default:"N/A" }}</dd>
+
+                                <dt class="col-sm-2">Invoice #</dt>
+                                <dd class="col-sm-10">{{ transaction.invoice_number|default:"N/A" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if transaction.notes %}
+                    <div class="row">
+                        <div class="col-12">
+                            <h5>Notes</h5>
+                            <p class="mb-0">{{ transaction.notes }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{% url 'myapp:transaction_list' %}" class="btn btn-secondary">
+                        Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

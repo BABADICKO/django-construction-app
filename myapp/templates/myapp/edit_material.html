@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Edit Material: {{ material.name }}</h2>
+        <div class="btn-group">
+            <a href="{% url 'material_detail' material.id %}" class="btn btn-secondary">
+                <i class="fas fa-eye"></i> View Details
+            </a>
+            <a href="{% url 'material_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" class="row g-3">
+                {% csrf_token %}
+                
+                <!-- Left Column -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Material Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ material.name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Material Code *</label>
+                        <input type="text" class="form-control" id="code" name="code" 
+                               value="{{ material.code }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category *</label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="">Select Category</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" 
+                                    {% if category.id == material.category.id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  rows="4">{{ material.description }}</textarea>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="unit" class="form-label">Unit of Measurement *</label>
+                        <select class="form-select" id="unit" name="unit" required>
+                            <option value="">Select Unit</option>
+                            <option value="kg" {% if material.unit == 'kg' %}selected{% endif %}>Kilograms (kg)</option>
+                            <option value="m" {% if material.unit == 'm' %}selected{% endif %}>Meters (m)</option>
+                            <option value="m2" {% if material.unit == 'm2' %}selected{% endif %}>Square Meters (m²)</option>
+                            <option value="m3" {% if material.unit == 'm3' %}selected{% endif %}>Cubic Meters (m³)</option>
+                            <option value="l" {% if material.unit == 'l' %}selected{% endif %}>Liters (L)</option>
+                            <option value="pcs" {% if material.unit == 'pcs' %}selected{% endif %}>Pieces (pcs)</option>
+                            <option value="box" {% if material.unit == 'box' %}selected{% endif %}>Boxes</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="unit_price" class="form-label">Unit Price *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="unit_price" name="unit_price" 
+                                   step="0.01" min="0" value="{{ material.unit_price }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="minimum_stock" class="form-label">Minimum Stock Level *</label>
+                        <input type="number" class="form-control" id="minimum_stock" name="minimum_stock" 
+                               min="0" value="{{ material.minimum_stock }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="current_stock" class="form-label">Current Stock *</label>
+                        <input type="number" class="form-control" id="current_stock" name="current_stock" 
+                               min="0" value="{{ material.current_stock }}" required>
+                        <small class="text-muted">
+                            Note: Editing stock directly here will not create consumption/delivery records.
+                            Use the dedicated forms for tracking stock changes.
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="col-12">
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash"></i> Delete Material
+                        </button>
+                        <div class="btn-group">
+                            <button type="reset" class="btn btn-secondary">
+                                <i class="fas fa-undo"></i> Reset Changes
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong>{{ material.name }}</strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'delete_material' material.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Material</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Add form validation and dynamic behavior
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        
+        form.addEventListener('submit', function(event) {
+            const unitPrice = document.getElementById('unit_price').value;
+            const minStock = document.getElementById('minimum_stock').value;
+            const currentStock = document.getElementById('current_stock').value;
+            
+            if (parseFloat(unitPrice) < 0) {
+                alert('Unit price cannot be negative');
+                event.preventDefault();
+            }
+            
+            if (parseInt(minStock) < 0) {
+                alert('Minimum stock cannot be negative');
+                event.preventDefault();
+            }
+            
+            if (parseInt(currentStock) < 0) {
+                alert('Current stock cannot be negative');
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,168 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}{% if material %}Edit{% else %}Create{% endif %} Material{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">{% if material %}Edit{% else %}Create{% endif %} Material</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Basic Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Material Name*</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ material.name|default:'' }}" required>
+                            <div class="invalid-feedback">
+                                Please provide a material name.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="code" class="form-label">Material Code*</label>
+                            <input type="text" class="form-control" id="code" name="code" 
+                                   value="{{ material.code|default:'' }}" required>
+                            <div class="invalid-feedback">
+                                Please provide a material code.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category and Description -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Category*</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Select a category</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" 
+                                    {% if material.category_id == category.id %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a category.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3">{{ material.description|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Units and Stock -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="unit" class="form-label">Unit*</label>
+                            <select class="form-select" id="unit" name="unit" required>
+                                <option value="">Select a unit</option>
+                                {% for unit in units %}
+                                <option value="{{ unit }}" 
+                                    {% if material.unit == unit %}selected{% endif %}>
+                                    {{ unit }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a unit.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="minimum_stock" class="form-label">Minimum Stock*</label>
+                            <input type="number" class="form-control" id="minimum_stock" 
+                                   name="minimum_stock" value="{{ material.minimum_stock|default:'0' }}" 
+                                   min="0" step="0.01" required>
+                            <div class="invalid-feedback">
+                                Please provide a minimum stock level.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="current_stock" class="form-label">Current Stock*</label>
+                            <input type="number" class="form-control" id="current_stock" 
+                                   name="current_stock" value="{{ material.current_stock|default:'0' }}" 
+                                   min="0" step="0.01" required>
+                            <div class="invalid-feedback">
+                                Please provide the current stock level.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="unit_price" class="form-label">Unit Price*</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="unit_price" 
+                                       name="unit_price" value="{{ material.unit_price|default:'0' }}" 
+                                       min="0" step="0.01" required>
+                                <div class="invalid-feedback">
+                                    Please provide a unit price.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'material_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {% if material %}Update{% else %}Create{% endif %} Material
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize Select2
+    $(document).ready(function() {
+        $('.form-select').select2({
+            theme: 'bootstrap-5'
+        });
+    });
+
+    // Form validation
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+</script>
+{% endblock %}

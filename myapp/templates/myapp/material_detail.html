@@ -1,0 +1,301 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Material Overview Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="card-title mb-0">{{ material.name }}</h2>
+                        <div class="btn-group">
+                            <a href="{% url 'edit_material' material.id %}" class="btn btn-primary">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Code:</strong> {{ material.code }}</p>
+                            <p><strong>Category:</strong> {{ material.category.name }}</p>
+                            <p><strong>Description:</strong> {{ material.description }}</p>
+                            <p><strong>Unit Price:</strong> ${{ material.unit_price }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stock-level mb-3">
+                                <!-- Debug info -->
+                                <div class="alert alert-info">
+                                    Debug: Stock Percentage = {{ stock_percentage }}
+                                </div>
+                                <h5>Stock Level</h5>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar {% if stock_percentage < 30 %}bg-danger{% elif stock_percentage < 70 %}bg-warning{% else %}bg-success{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ stock_percentage }}%" 
+                                         aria-valuenow="{{ stock_percentage }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ stock_percentage }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white">Total Consumed</h6>
+                            <h3 class="text-white mb-0">{{ total_consumed }}</h3>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-box-open fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white">Total Delivered</h6>
+                            <h3 class="text-white mb-0">{{ total_delivered }}</h3>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-truck fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white">Active Projects</h6>
+                            <h3 class="text-white mb-0">{{ active_projects }}</h3>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-project-diagram fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white">Stock Value</h6>
+                            <h3 class="text-white mb-0">${{ stock_value }}</h3>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consumption History Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Consumption History (Last 30 Days)</h4>
+                    <canvas id="consumptionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Recent Consumptions</h4>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Project</th>
+                                    <th>Quantity</th>
+                                    <th>Recorded By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for consumption in recent_consumptions %}
+                                <tr>
+                                    <td>{{ consumption.date|date:"Y-m-d" }}</td>
+                                    <td>{{ consumption.project.name }}</td>
+                                    <td>{{ consumption.quantity }}</td>
+                                    <td>{{ consumption.recorded_by.username }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Recent Deliveries</h4>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Quantity</th>
+                                    <th>Supplier</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for delivery in recent_deliveries %}
+                                <tr>
+                                    <td>{{ delivery.delivery_date|date:"Y-m-d" }}</td>
+                                    <td>{{ delivery.quantity }}</td>
+                                    <td>{{ delivery.supplier }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Using This Material -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Projects Using This Material</h4>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Project</th>
+                                    <th>Status</th>
+                                    <th>Progress</th>
+                                    <th>Total Consumed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in projects_using_material %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'project_detail' project.id %}">{{ project.name }}</a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ project.status_color }}">{{ project.status }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar {% if project.progress < 30 %}bg-danger{% elif project.progress < 70 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ project.progress }}%" aria-valuenow="{{ project.progress }}" aria-valuemin="0" aria-valuemax="100">
+                                                {{ project.progress }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ project.total_consumed }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete {{ material.name }}? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'delete_material' material.id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Consumption History Chart
+    const ctx = document.getElementById('consumptionChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: JSON.parse('{{ consumption_dates|safe|escapejs }}'),
+            datasets: [{
+                label: 'Consumption Quantity',
+                data: JSON.parse('{{ consumption_quantities|safe|escapejs }}'),
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Quantity'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock extra_js %}

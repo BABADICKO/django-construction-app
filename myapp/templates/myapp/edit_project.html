@@ -1,0 +1,183 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Edit Project</h1>
+        <a href="{% url 'project_list' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Projects
+        </a>
+    </div>
+
+    <!-- Project Form Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Project Details</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Project Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.name.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.description.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.start_date.id_for_label }}" class="form-label">Start Date</label>
+                                    {{ form.start_date }}
+                                    {% if form.start_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.start_date.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date</label>
+                                    {{ form.end_date }}
+                                    {% if form.end_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.end_date.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                                    {{ form.status }}
+                                    {% if form.status.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.status.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.priority.id_for_label }}" class="form-label">Priority</label>
+                                    {{ form.priority }}
+                                    {% if form.priority.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.priority.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Project
+                    </button>
+                    <a href="{% url 'project_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Project Progress Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Project Progress</h6>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span>Overall Progress</span>
+                    <span class="text-primary">{{ project.progress }}%</span>
+                </div>
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ project.progress }}%"
+                        aria-valuenow="{{ project.progress }}" aria-valuemin="0" aria-valuemax="100">
+                        {{ project.progress }}%
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Tasks Overview</h5>
+                            <div class="small mb-2">
+                                <span class="mr-2">
+                                    <i class="fas fa-circle text-success"></i> Completed: {{ project.completed_tasks }}
+                                </span>
+                                <span class="mr-2">
+                                    <i class="fas fa-circle text-warning"></i> In Progress: {{ project.in_progress_tasks }}
+                                </span>
+                                <span>
+                                    <i class="fas fa-circle text-danger"></i> Pending: {{ project.pending_tasks }}
+                                </span>
+                            </div>
+                            <a href="{% url 'task_list' project.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-tasks"></i> View Tasks
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Project Timeline</h5>
+                            <div class="small text-muted">
+                                <div class="mb-1">
+                                    <i class="fas fa-calendar-alt"></i> Start: {{ project.start_date|date:"M d, Y" }}
+                                </div>
+                                <div class="mb-1">
+                                    <i class="fas fa-calendar-check"></i> End: {{ project.end_date|date:"M d, Y" }}
+                                </div>
+                                <div>
+                                    <i class="fas fa-clock"></i> Days Remaining: {{ project.days_remaining }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Add Bootstrap classes to form fields
+        $('input[type="text"], input[type="date"], textarea, select').addClass('form-control');
+        
+        // Initialize date pickers
+        $('input[type="date"]').flatpickr({
+            dateFormat: "Y-m-d",
+            allowInput: true
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --primary-color: #4e73df;
+            --secondary-color: #858796;
+            --success-color: #1cc88a;
+        }
+        
+        .wrapper {
+            display: flex;
+            width: 100%;
+        }
+        
+        #sidebar {
+            width: var(--sidebar-width);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+        
+        #content {
+            width: calc(100% - var(--sidebar-width));
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+        }
+        
+        .nav-link {
+            color: var(--secondary-color);
+            padding: 10px 20px;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color);
+            background: rgba(78,115,223,0.1);
+        }
+        
+        .nav-link i {
+            width: 25px;
+        }
+        
+        .submenu {
+            padding-left: 25px;
+        }
+        
+        .logo-section {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar">
+            <div class="logo-section">
+                <h4>Project Management</h4>
+            </div>
+            
+            <ul class="nav flex-column">
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'myapp:home' %}">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                </li>
+
+                <!-- Projects Section -->
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="collapse" href="#projectsSubmenu">
+                        <i class="fas fa-project-diagram"></i> Projects
+                    </a>
+                    <div class="collapse submenu" id="projectsSubmenu">
+                        <a class="nav-link" href="{% url 'myapp:project_dashboard' %}">
+                            <i class="fas fa-chart-line"></i> Dashboard
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:project_list' %}">
+                            <i class="fas fa-list"></i> Project List
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:project_create' %}">
+                            <i class="fas fa-plus"></i> Add Project
+                        </a>
+                    </div>
+                </li>
+
+                <!-- Tasks Section -->
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="collapse" href="#tasksSubmenu">
+                        <i class="fas fa-tasks"></i> Tasks
+                    </a>
+                    <div class="collapse submenu" id="tasksSubmenu">
+                        <a class="nav-link" href="{% url 'myapp:task_dashboard' %}">
+                            <i class="fas fa-chart-bar"></i> Dashboard
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:task_list' %}">
+                            <i class="fas fa-list"></i> Task List
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:task_create' %}">
+                            <i class="fas fa-plus"></i> Add Task
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:task_import' %}">
+                            <i class="fas fa-file-import"></i> Import Tasks
+                        </a>
+                    </div>
+                </li>
+
+                <!-- Equipment Section -->
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="collapse" href="#equipmentSubmenu">
+                        <i class="fas fa-tools"></i> Equipment
+                    </a>
+                    <div class="collapse submenu" id="equipmentSubmenu">
+                        <a class="nav-link" href="{% url 'myapp:equipment_list' %}">
+                            <i class="fas fa-list"></i> Equipment List
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:equipment_create' %}">
+                            <i class="fas fa-plus"></i> Add Equipment
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:equipment_usage' %}">
+                            <i class="fas fa-clock"></i> Usage Log
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:equipment_transfer' %}">
+                            <i class="fas fa-exchange-alt"></i> Transfer
+                        </a>
+                    </div>
+                </li>
+
+                <!-- Materials Section -->
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="collapse" href="#materialsSubmenu">
+                        <i class="fas fa-boxes"></i> Materials
+                    </a>
+                    <div class="collapse submenu" id="materialsSubmenu">
+                        <a class="nav-link" href="{% url 'myapp:material_dashboard' %}">
+                            <i class="fas fa-chart-line"></i> Dashboard
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:material_list' %}">
+                            <i class="fas fa-list"></i> Material List
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:material_create' %}">
+                            <i class="fas fa-plus"></i> Add Material
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:category_list' %}">
+                            <i class="fas fa-tags"></i> Categories
+                        </a>
+                    </div>
+                </li>
+
+                <!-- Inventory Section -->
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="collapse" href="#inventorySubmenu">
+                        <i class="fas fa-warehouse"></i> Inventory
+                    </a>
+                    <div class="collapse submenu" id="inventorySubmenu">
+                        <a class="nav-link" href="{% url 'myapp:inventory_dashboard' %}">
+                            <i class="fas fa-chart-line"></i> Dashboard
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:warehouse_create' %}">
+                            <i class="fas fa-plus"></i> Add Warehouse
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:stock_entry' %}">
+                            <i class="fas fa-clipboard-list"></i> Stock Entry
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:material_transaction' %}">
+                            <i class="fas fa-exchange-alt"></i> Transactions
+                        </a>
+                    </div>
+                </li>
+
+                <!-- Subcontractors Section -->
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="collapse" href="#subcontractorsSubmenu">
+                        <i class="fas fa-users"></i> Subcontractors
+                    </a>
+                    <div class="collapse submenu" id="subcontractorsSubmenu">
+                        <a class="nav-link" href="{% url 'myapp:subcontractor_dashboard' %}">
+                            <i class="fas fa-chart-line"></i> Dashboard
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:subcontractor_list' %}">
+                            <i class="fas fa-list"></i> List
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:subcontractor_create' %}">
+                            <i class="fas fa-user-plus"></i> Add New
+                        </a>
+                    </div>
+                </li>
+
+                <!-- Cost Management Section -->
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="collapse" href="#costsSubmenu">
+                        <i class="fas fa-dollar-sign"></i> Costs
+                    </a>
+                    <div class="collapse submenu" id="costsSubmenu">
+                        <a class="nav-link" href="{% url 'myapp:cost_dashboard' %}">
+                            <i class="fas fa-chart-line"></i> Dashboard
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:bom_list' %}">
+                            <i class="fas fa-file-invoice-dollar"></i> BOM
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:cost_analysis' %}">
+                            <i class="fas fa-chart-pie"></i> Analysis
+                        </a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Activate the current section in the sidebar
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                    // Expand parent submenu if exists
+                    const submenu = link.closest('.submenu');
+                    if (submenu) {
+                        submenu.classList.add('show');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

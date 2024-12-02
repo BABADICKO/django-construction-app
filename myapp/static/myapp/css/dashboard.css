@@ -1,0 +1,166 @@
+/* Modern Dashboard Styles */
+:root {
+    --primary-color: #3498db;
+    --success-color: #2ecc71;
+    --info-color: #3498db;
+    --warning-color: #f1c40f;
+    --danger-color: #e74c3c;
+    --light-bg: #f8f9fa;
+    --dark-bg: #2c3e50;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Modern Card Styles */
+.modern-card {
+    background: #ffffff;
+    border-radius: 15px;
+    border: none;
+    box-shadow: 
+        6px 6px 12px rgba(0, 0, 0, 0.05),
+        -6px -6px 12px rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.modern-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 
+        8px 8px 16px rgba(0, 0, 0, 0.1),
+        -8px -8px 16px rgba(255, 255, 255, 0.95);
+}
+
+.modern-card .card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 1.25rem;
+}
+
+.modern-card .card-body {
+    padding: 1.25rem;
+}
+
+/* Stats Cards */
+.stats-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.stats-icon i {
+    font-size: 1.5rem;
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.stats-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Activity Items */
+.activity-item {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.3s ease;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-item:hover {
+    background-color: rgba(0, 0, 0, 0.01);
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+/* Progress Bars */
+.progress {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+
+/* Chart Container */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* Status Badges */
+.badge {
+    padding: 0.5em 1em;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.bg-primary-soft {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: var(--primary-color);
+}
+
+.bg-success-soft {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: var(--success-color);
+}
+
+.bg-warning-soft {
+    background-color: rgba(241, 196, 15, 0.1);
+    color: var(--warning-color);
+}
+
+.bg-danger-soft {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: var(--danger-color);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .stats-number {
+        font-size: 1.5rem;
+    }
+    
+    .stats-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .stats-icon i {
+        font-size: 1.25rem;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modern-card {
+    animation: fadeIn 0.5s ease-out;
+}

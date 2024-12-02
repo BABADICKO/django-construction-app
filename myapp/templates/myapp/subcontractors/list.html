@@ -1,0 +1,54 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Subcontractors</h2>
+        <a href="{% url 'myapp:subcontractor_create' %}" class="btn btn-primary">Add Subcontractor</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Contact Person</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th>Rating</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subcontractor in subcontractors %}
+                        <tr>
+                            <td>{{ subcontractor.code }}</td>
+                            <td>{{ subcontractor.name }}</td>
+                            <td>{{ subcontractor.contact_person }}</td>
+                            <td>{{ subcontractor.phone }}</td>
+                            <td>
+                                <span class="badge {% if subcontractor.status == 'ACTIVE' %}bg-success{% elif subcontractor.status == 'INACTIVE' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ subcontractor.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ subcontractor.rating }}/5</td>
+                            <td>
+                                <a href="{% url 'myapp:subcontractor_edit' subcontractor.pk %}" class="btn btn-sm btn-info">Edit</a>
+                                <a href="{% url 'myapp:subcontractor_delete' subcontractor.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No subcontractors found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

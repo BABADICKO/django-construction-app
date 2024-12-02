@@ -1,0 +1,54 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Bill of Materials</h2>
+    
+    {% for cost_center in cost_centers %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>{{ cost_center.name }}</h4>
+            <p class="text-muted mb-0">{{ cost_center.description }}</p>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cost_center.cost_items.all %}
+                        <tr>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.get_cost_type_display }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>${{ item.unit_price }}</td>
+                            <td>${{ item.total_cost }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No cost items found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="4" class="text-end">Total Budget:</th>
+                            <th>${{ cost_center.budget }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info mt-4">No cost centers found</div>
+    {% endfor %}
+</div>
+{% endblock %}

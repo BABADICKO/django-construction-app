@@ -1,0 +1,59 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Record Material Transaction</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group mt-3">
+                            {{ form.material.label_tag }}
+                            {{ form.material }}
+                            {% if form.material.errors %}
+                                <div class="text-danger">{{ form.material.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.transaction_type.label_tag }}
+                            {{ form.transaction_type }}
+                            {% if form.transaction_type.errors %}
+                                <div class="text-danger">{{ form.transaction_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.quantity.label_tag }}
+                            {{ form.quantity }}
+                            {% if form.quantity.errors %}
+                                <div class="text-danger">{{ form.quantity.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.project.label_tag }}
+                            {{ form.project }}
+                            {% if form.project.errors %}
+                                <div class="text-danger">{{ form.project.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group mt-3">
+                            {{ form.notes.label_tag }}
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Record Transaction</button>
+                            <a href="{% url 'myapp:inventory_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

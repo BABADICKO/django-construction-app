@@ -1,0 +1,76 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Subcontractor Dashboard</h2>
+    
+    <!-- Summary Cards -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Subcontractors</h5>
+                    <h2 class="card-text">{{ total_subcontractors }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Active Assignments</h5>
+                    <h2 class="card-text">{{ active_assignments }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <a href="{% url 'myapp:subcontractor_create' %}" class="btn btn-primary me-2">Add Subcontractor</a>
+            <a href="{% url 'myapp:subcontractor_list' %}" class="btn btn-info">View All Subcontractors</a>
+        </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Recent Payments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Subcontractor</th>
+                                    <th>Payment Type</th>
+                                    <th>Amount</th>
+                                    <th>Invoice</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in recent_payments %}
+                                <tr>
+                                    <td>{{ payment.payment_date }}</td>
+                                    <td>{{ payment.assignment.subcontractor.name }}</td>
+                                    <td>{{ payment.get_payment_type_display }}</td>
+                                    <td>${{ payment.amount }}</td>
+                                    <td>{{ payment.invoice_number }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No recent payments</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

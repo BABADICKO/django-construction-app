@@ -1,0 +1,118 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}Tasks{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Tasks</h2>
+        <a href="{% url 'myapp:task_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Task
+        </a>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control" placeholder="Search tasks..." value="{{ request.GET.q }}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Statuses</option>
+                        <option value="NOT_STARTED" {% if current_status == 'NOT_STARTED' %}selected{% endif %}>Not Started</option>
+                        <option value="IN_PROGRESS" {% if current_status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+                        <option value="COMPLETED" {% if current_status == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tasks List -->
+    <div class="row">
+        {% for task in tasks %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ task.title }}</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-link" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'myapp:task_edit' task.pk %}">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{% url 'myapp:task_delete' task.pk %}">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ task.description|truncatewords:30 }}</p>
+                    <div class="mb-3">
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar" role="progressbar" style="width: {{ task.progress }}%"
+                                aria-valuenow="{{ task.progress }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ task.progress }}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <small class="text-muted">
+                                <i class="fas fa-project-diagram"></i> {{ task.project.name }}
+                            </small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">
+                                <i class="fas fa-user"></i> {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                            </small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar"></i> Due: {{ task.due_date|date:"M d, Y" }}
+                            </small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">
+                                <i class="fas fa-flag"></i> {{ task.get_priority_display }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <form method="post" action="{% url 'myapp:task_update_progress' task.pk %}" class="d-flex align-items-center">
+                        {% csrf_token %}
+                        <input type="number" name="progress" class="form-control form-control-sm me-2" 
+                               min="0" max="100" value="{{ task.progress }}" style="width: 80px;">
+                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                            Update Progress
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No tasks found. Create a new task to get started!
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,289 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}Materials Inventory{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Materials Inventory</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Materials</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'record_delivery' %}" class="btn btn-success">
+                <i class="fas fa-truck"></i> Record Delivery
+            </a>
+            <a href="{% url 'create_material' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Material
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar-sm">
+                                <span class="avatar-title bg-primary-subtle rounded">
+                                    <i class="fas fa-boxes fa-lg text-primary"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">Total Materials</h6>
+                            <div class="text-primary h4 mb-0">{{ total_materials }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar-sm">
+                                <span class="avatar-title bg-warning-subtle rounded">
+                                    <i class="fas fa-exclamation-triangle fa-lg text-warning"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">Low Stock Items</h6>
+                            <div class="text-warning h4 mb-0">{{ low_stock_count }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar-sm">
+                                <span class="avatar-title bg-success-subtle rounded">
+                                    <i class="fas fa-truck-loading fa-lg text-success"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">Recent Deliveries</h6>
+                            <div class="text-success h4 mb-0">{{ recent_deliveries_count }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar-sm">
+                                <span class="avatar-title bg-info-subtle rounded">
+                                    <i class="fas fa-chart-line fa-lg text-info"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">Total Value</h6>
+                            <div class="text-info h4 mb-0">${{ total_value|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="Search materials..." 
+                               value="{{ request.GET.search }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="sort" class="form-select">
+                        <option value="name">Sort by Name</option>
+                        <option value="stock" {% if request.GET.sort == 'stock' %}selected{% endif %}>Sort by Stock Level</option>
+                        <option value="price" {% if request.GET.sort == 'price' %}selected{% endif %}>Sort by Price</option>
+                        <option value="recent" {% if request.GET.sort == 'recent' %}selected{% endif %}>Sort by Recent</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check form-switch mt-2">
+                        <input type="checkbox" name="low_stock" class="form-check-input" id="lowStockSwitch" 
+                               {% if request.GET.low_stock %}checked{% endif %}>
+                        <label class="form-check-label" for="lowStockSwitch">Low Stock Only</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Materials Grid -->
+    <div class="row g-4">
+        {% for material in materials %}
+        <div class="col-xl-3 col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <h5 class="card-title mb-0">{{ material.name }}</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-link p-0" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'material_detail' material.id %}">
+                                        <i class="fas fa-eye"></i> View Details
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'edit_material' material.id %}">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'record_consumption' %}?material={{ material.id }}">
+                                        <i class="fas fa-minus-circle"></i> Record Consumption
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" 
+                                       data-bs-target="#deleteMaterial{{ material.id }}">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-0">Code: {{ material.code }}</p>
+                    <p class="text-muted small">Category: {{ material.category.name }}</p>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small>Stock Level</small>
+                            <small class="fw-bold {% if material.current_stock <= material.minimum_stock %}text-danger{% endif %}">
+                                {{ material.current_stock }}/{{ material.minimum_stock }} {{ material.unit }}
+                            </small>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar {% if material.current_stock <= material.minimum_stock %}bg-danger{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ material.stock_percentage }}%">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge {% if material.current_stock <= material.minimum_stock %}bg-danger{% else %}bg-success{% endif %}">
+                            {% if material.current_stock <= material.minimum_stock %}
+                            Low Stock
+                            {% else %}
+                            In Stock
+                            {% endif %}
+                        </span>
+                        <span class="fw-bold">${{ material.unit_price|floatformat:2 }}/{{ material.unit }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteMaterial{{ material.id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Delete Material</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete "{{ material.name }}"? This action cannot be undone.</p>
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Warning: All associated consumption and delivery records will be permanently deleted.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form action="{% url 'delete_material' material.id %}" method="POST" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Delete Material</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                    <h5>No Materials Found</h5>
+                    <p class="text-muted">Start by adding your first material</p>
+                    <a href="{% url 'create_material' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Material
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Custom CSS -->
+<style>
+.avatar-sm {
+    height: 3rem;
+    width: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+}
+.bg-primary-subtle {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+.bg-success-subtle {
+    background-color: rgba(25, 135, 84, 0.1);
+}
+.bg-warning-subtle {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+.bg-info-subtle {
+    background-color: rgba(13, 202, 240, 0.1);
+}
+</style>
+{% endblock %}

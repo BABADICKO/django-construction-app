@@ -1,0 +1,190 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="modern-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Materials</h5>
+            <div>
+                <a href="{% url 'category_list' %}" class="btn btn-outline-primary btn-sm me-2">
+                    <i class="fas fa-tags"></i> Manage Categories
+                </a>
+                <a href="{% url 'subcategory_list' %}" class="btn btn-outline-info btn-sm me-2">
+                    <i class="fas fa-tag"></i> Manage Subcategories
+                </a>
+                <a href="{% url 'material_create' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Add Material
+                </a>
+            </div>
+        </div>
+        
+        <!-- Search and Filter Section -->
+        <div class="card-body pb-0">
+            <form method="get" class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Search materials..." value="{{ search_query }}">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="category" class="form-select" id="category-select">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="subcategory" class="form-select" id="subcategory-select">
+                        <option value="">All Subcategories</option>
+                        {% for subcategory in subcategories %}
+                        <option value="{{ subcategory.id }}" {% if selected_subcategory == subcategory.id|stringformat:"s" %}selected{% endif %}>
+                            {{ subcategory.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="stock" class="form-select">
+                        <option value="">All Stock Levels</option>
+                        <option value="low" {% if stock_filter == 'low' %}selected{% endif %}>Low Stock</option>
+                        <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>Out of Stock</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Subcategory</th>
+                            <th>Unit</th>
+                            <th>Current Stock</th>
+                            <th>Min. Stock</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for material in materials %}
+                        <tr>
+                            <td>{{ material.code }}</td>
+                            <td>{{ material.name }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ material.category.name }}</span>
+                            </td>
+                            <td>
+                                {% if material.subcategory %}
+                                <span class="badge bg-info">{{ material.subcategory.name }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">No Subcategory</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ material.unit }}</td>
+                            <td>
+                                {% if material.current_stock <= material.minimum_stock %}
+                                    <span class="badge bg-warning">{{ material.current_stock }}</span>
+                                {% else %}
+                                    {{ material.current_stock }}
+                                {% endif %}
+                            </td>
+                            <td>{{ material.minimum_stock }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'material_detail' material.id %}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'material_edit' material.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal{{ material.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No materials found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modals -->
+{% for material in materials %}
+<div class="modal fade" id="deleteModal{{ material.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete "{{ material.name }}"?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'material_delete' material.id %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize Select2 for better dropdown experience
+    $('#category-select, #subcategory-select').select2({
+        theme: 'bootstrap4',
+        width: '100%'
+    });
+
+    // Handle category change to update subcategories
+    $('#category-select').change(function() {
+        var categoryId = $(this).val();
+        var subcategorySelect = $('#subcategory-select');
+        
+        // Clear current options
+        subcategorySelect.empty().append('<option value="">All Subcategories</option>');
+        
+        if (categoryId) {
+            // Fetch subcategories for selected category
+            $.get(`/api/categories/${categoryId}/subcategories/`, function(data) {
+                data.forEach(function(subcategory) {
+                    subcategorySelect.append(
+                        $('<option></option>')
+                            .attr('value', subcategory.id)
+                            .text(subcategory.name)
+                    );
+                });
+            });
+        }
+    });
+});
+</script>
+{% endblock extra_js %}

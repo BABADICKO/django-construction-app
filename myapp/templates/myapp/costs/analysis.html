@@ -1,0 +1,84 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Cost Analysis</h2>
+    
+    <!-- Cost Distribution by Type -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Cost Distribution by Type</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Cost Type</th>
+                            <th>Total Amount</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% with total_cost=cost_by_type.values|sum %}
+                        {% for type, amount in cost_by_type.items %}
+                        <tr>
+                            <td>{{ type }}</td>
+                            <td>${{ amount }}</td>
+                            <td>{{ amount|div:total_cost|mul:100|floatformat:1 }}%</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="table-info">
+                            <th>Total</th>
+                            <th>${{ total_cost }}</th>
+                            <th>100%</th>
+                        </tr>
+                        {% endwith %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Cost Items -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Recent Cost Items</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Cost Center</th>
+                            <th>Description</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cost_items %}
+                        <tr>
+                            <td>{{ item.date }}</td>
+                            <td>{{ item.cost_center.name }}</td>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.get_cost_type_display }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>${{ item.unit_price }}</td>
+                            <td>${{ item.total_cost }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No cost items found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

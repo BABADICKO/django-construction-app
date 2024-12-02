@@ -1,0 +1,135 @@
+/* Sidebar Styles */
+.wrapper {
+    display: flex;
+    width: 100%;
+}
+
+.modern-sidebar {
+    min-width: 250px;
+    max-width: 250px;
+    min-height: 100vh;
+    background: #ffffff;
+    box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+    position: fixed;
+    z-index: 1000;
+}
+
+.modern-sidebar.active {
+    margin-left: -250px;
+}
+
+.modern-sidebar .sidebar-header {
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.modern-sidebar .sidebar-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.modern-sidebar ul.components {
+    padding: 20px 0;
+}
+
+.modern-sidebar ul li {
+    padding: 0 20px;
+    margin-bottom: 5px;
+}
+
+.modern-sidebar ul li a {
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    color: #2c3e50;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.modern-sidebar ul li a:hover {
+    background: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+    transform: translateX(5px);
+}
+
+.modern-sidebar ul li.active a {
+    background: #3498db;
+    color: #ffffff;
+    box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
+}
+
+.modern-sidebar ul li a i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Content Styles */
+#content {
+    width: calc(100% - 250px);
+    min-height: 100vh;
+    transition: all 0.3s;
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+#content.active {
+    width: 100%;
+}
+
+/* Navbar Styles */
+.navbar {
+    padding: 15px 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+#sidebarCollapse {
+    background: transparent;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+#sidebarCollapse:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* User Dropdown */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.dropdown-item {
+    padding: 8px 20px;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modern-sidebar {
+        margin-left: -250px;
+    }
+    .modern-sidebar.active {
+        margin-left: 0;
+    }
+    #content {
+        width: 100%;
+    }
+    #content.active {
+        width: calc(100% - 250px);
+    }
+}
