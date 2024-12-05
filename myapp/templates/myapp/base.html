@@ -172,12 +172,22 @@
                         <a class="nav-link" href="{% url 'myapp:warehouse_create' %}">
                             <i class="fas fa-plus"></i> Add Warehouse
                         </a>
-                        <a class="nav-link" href="{% url 'myapp:stock_entry' %}">
-                            <i class="fas fa-clipboard-list"></i> Stock Entry
-                        </a>
-                        <a class="nav-link" href="{% url 'myapp:material_transaction' %}">
+                        <a class="nav-link" href="#transactionsSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="transactionsSubmenu">
                             <i class="fas fa-exchange-alt"></i> Transactions
                         </a>
+                        <div class="collapse" id="transactionsSubmenu">
+                            <div class="nav flex-column ms-3">
+                                <a class="nav-link" href="{% url 'myapp:material_delivery' %}">
+                                    <i class="fas fa-truck me-2"></i> Material Delivery
+                                </a>
+                                <a class="nav-link" href="{% url 'myapp:material_consumption' %}">
+                                    <i class="fas fa-box-open me-2"></i> Material Consumption
+                                </a>
+                                <a class="nav-link" href="{% url 'myapp:stock_transfer' %}">
+                                    <i class="fas fa-exchange-alt me-2"></i> Stock Transfer
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </li>
 
@@ -198,21 +208,52 @@
                         </a>
                     </div>
                 </li>
-
+                <!-- Maintenance Section -->
+                <li class="nav-item">
+                   <a class="nav-link" data-bs-toggle="collapse" href="#maintenanceSubmenu">
+                      <i class="fas fa-wrench"></i> Maintenance
+                   </a>
+                   <div class="collapse submenu" id="maintenanceSubmenu">
+                        <a class="nav-link" href="{% url 'myapp:maintenance_dashboard' %}">
+                            <i class="fas fa-chart-line"></i> Dashboard
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:maintenance_list' %}">
+                            <i class="fas fa-list"></i> Records
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:maintenance_create' %}">
+                            <i class="fas fa-plus"></i> New Record
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:maintenance_calendar' %}">
+                            <i class="fas fa-calendar"></i> Calendar
+                        </a>
+                    </div>
+                </li>
                 <!-- Cost Management Section -->
                 <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="collapse" href="#costsSubmenu">
-                        <i class="fas fa-dollar-sign"></i> Costs
+                    <a class="nav-link" data-bs-toggle="collapse" href="#costSubmenu">
+                        <i class="fas fa-dollar-sign"></i> Cost Management
                     </a>
-                    <div class="collapse submenu" id="costsSubmenu">
+                    <div class="collapse submenu" id="costSubmenu">
                         <a class="nav-link" href="{% url 'myapp:cost_dashboard' %}">
                             <i class="fas fa-chart-line"></i> Dashboard
                         </a>
-                        <a class="nav-link" href="{% url 'myapp:bom_list' %}">
-                            <i class="fas fa-file-invoice-dollar"></i> BOM
-                        </a>
                         <a class="nav-link" href="{% url 'myapp:cost_analysis' %}">
-                            <i class="fas fa-chart-pie"></i> Analysis
+                            <i class="fas fa-chart-bar"></i> Cost Analysis
+                        </a>
+                        <a class="nav-link" href="{% url 'myapp:bom_list' %}">
+                            <i class="fas fa-list"></i> Bill of Materials
+                        </a>
+                    </div>
+                </li>
+
+                <!-- Admin Section -->
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="collapse" href="#adminSubmenu">
+                        <i class="fas fa-user-shield"></i> Admin
+                    </a>
+                    <div class="collapse submenu" id="adminSubmenu">
+                        <a class="nav-link" href="{% url 'myapp:audit_log_list' %}">
+                            <i class="fas fa-history"></i> Audit Logs
                         </a>
                     </div>
                 </li>

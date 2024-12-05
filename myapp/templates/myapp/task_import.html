@@ -1,0 +1,116 @@
+{% extends 'myapp/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Import Tasks{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Import Tasks</h2>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="task_file" class="form-label">Select File</label>
+                            <input type="file" class="form-control" id="task_file" name="task_file" accept=".csv,.xlsx,.xls" required>
+                            <div class="form-text">Supported formats: CSV, Excel (.xlsx, .xls)</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">File Format Instructions</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>Your file should contain the following columns:</p>
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Column Name</th>
+                                                <th>Required</th>
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>title</td>
+                                                <td>Yes</td>
+                                                <td>Task title</td>
+                                            </tr>
+                                            <tr>
+                                                <td>description</td>
+                                                <td>No</td>
+                                                <td>Task description</td>
+                                            </tr>
+                                            <tr>
+                                                <td>project</td>
+                                                <td>Yes</td>
+                                                <td>Project name (must exist in system)</td>
+                                            </tr>
+                                            <tr>
+                                                <td>assigned_to</td>
+                                                <td>Yes</td>
+                                                <td>Username of assignee (must exist in system)</td>
+                                            </tr>
+                                            <tr>
+                                                <td>status</td>
+                                                <td>No</td>
+                                                <td>NOT_STARTED, IN_PROGRESS, COMPLETED (default: NOT_STARTED)</td>
+                                            </tr>
+                                            <tr>
+                                                <td>priority</td>
+                                                <td>No</td>
+                                                <td>LOW, MEDIUM, HIGH (default: MEDIUM)</td>
+                                            </tr>
+                                            <tr>
+                                                <td>progress</td>
+                                                <td>No</td>
+                                                <td>Number between 0-100 (default: 0)</td>
+                                            </tr>
+                                            <tr>
+                                                <td>start_date</td>
+                                                <td>No</td>
+                                                <td>Format: DD-MM-YYYY</td>
+                                            </tr>
+                                            <tr>
+                                                <td>due_date</td>
+                                                <td>No</td>
+                                                <td>Format: DD-MM-YYYY</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <div class="alert alert-info mt-3">
+                                        <h6>Important Notes:</h6>
+                                        <ul class="mb-0">
+                                            <li>Project names must match existing projects in the system</li>
+                                            <li>Usernames must match existing users in the system</li>
+                                            <li>Dates should be in DD-MM-YYYY format</li>
+                                            <li>Progress will be displayed as a progress bar in the task list</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'myapp:task_list' %}" class="btn btn-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Import Tasks</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

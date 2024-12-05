@@ -1,11 +1,14 @@
 {% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}Subcontractor Dashboard{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Subcontractor Dashboard</h2>
-    
-    <!-- Summary Cards -->
-    <div class="row mt-4">
+    <h1 class="mb-4">Subcontractor Dashboard</h1>
+
+    <!-- Statistics Overview -->
+    <div class="row mb-4">
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
@@ -17,57 +20,84 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Active Assignments</h5>
-                    <h2 class="card-text">{{ active_assignments }}</h2>
+                    <h5 class="card-title">Active Subcontractors</h5>
+                    <h2 class="card-text">{{ active_subcontractors }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Projects with Subcontractors</h5>
+                    <h2 class="card-text">{{ subcontractor_projects }}</h2>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <a href="{% url 'myapp:subcontractor_create' %}" class="btn btn-primary me-2">Add Subcontractor</a>
-            <a href="{% url 'myapp:subcontractor_list' %}" class="btn btn-info">View All Subcontractors</a>
+    <div class="row">
+        <!-- Subcontractors by Type -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Subcontractors by Type</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for type in subcontractors_by_type %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ type.specialization }}
+                            <span class="badge bg-primary rounded-pill">{{ type.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Subcontractors -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Subcontractors</h5>
+                    <a href="{% url 'myapp:subcontractor_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for subcontractor in recent_subcontractors %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ subcontractor.name }}</h6>
+                                <small class="text-muted">{{ subcontractor.created_at|date:"M d, Y" }}</small>
+                            </div>
+                            <p class="mb-1">{{ subcontractor.specialization }}</p>
+                            <small class="text-muted">
+                                <span class="badge {% if subcontractor.status == 'ACTIVE' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ subcontractor.get_status_display }}
+                                </span>
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Recent Payments -->
-    <div class="row mt-4">
-        <div class="col-md-12">
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5>Recent Payments</h5>
+                    <h5 class="card-title mb-0">Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Subcontractor</th>
-                                    <th>Payment Type</th>
-                                    <th>Amount</th>
-                                    <th>Invoice</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for payment in recent_payments %}
-                                <tr>
-                                    <td>{{ payment.payment_date }}</td>
-                                    <td>{{ payment.assignment.subcontractor.name }}</td>
-                                    <td>{{ payment.get_payment_type_display }}</td>
-                                    <td>${{ payment.amount }}</td>
-                                    <td>{{ payment.invoice_number }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center">No recent payments</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                    <a href="{% url 'myapp:subcontractor_create' %}" class="btn btn-primary me-2">
+                        <i class="fas fa-plus"></i> Add Subcontractor
+                    </a>
+                    <a href="{% url 'myapp:subcontractor_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> View All Subcontractors
+                    </a>
                 </div>
             </div>
         </div>

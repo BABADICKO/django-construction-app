@@ -1,0 +1,317 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}{{ project.name }} - Project Planning{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css" rel="stylesheet">
+<style>
+    .planning-card {
+        transition: all 0.3s ease;
+    }
+    .planning-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .budget-progress {
+        height: 10px;
+    }
+    .task-dependency-line {
+        stroke: #6c757d;
+        stroke-width: 2;
+        stroke-dasharray: 5,5;
+    }
+    .milestone-marker {
+        width: 20px;
+        height: 20px;
+        background-color: #dc3545;
+        border-radius: 50%;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Project Planning: {{ project.name }}</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'myapp:project_detail' project.id %}">{{ project.name }}</a></li>
+                    <li class="breadcrumb-item active">Planning</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            {% if project.status == 'PLANNING' %}
+                <form method="post" action="{% url 'myapp:start_project_execution' project.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-play"></i> Start Execution
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Planning Overview Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Budget Overview -->
+        <div class="col-md-4">
+            <div class="card planning-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Budget Overview</h5>
+                    <a href="{% url 'myapp:budget_item_create' project.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Add Item
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Budget:</span>
+                            <span class="fw-bold">${{ project.budget|default:"0.00" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Estimated Cost:</span>
+                            <span class="fw-bold">${{ total_estimated|floatformat:2 }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Actual Cost:</span>
+                            <span class="fw-bold">${{ total_actual|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                    <div class="progress budget-progress mb-2">
+                        <div class="progress-bar {% if project.is_over_budget %}bg-danger{% endif %}" 
+                             role="progressbar" 
+                             style="width: {% widthratio total_actual project.budget 100 %}%">
+                        </div>
+                    </div>
+                    <small class="text-muted">Budget utilization: {% widthratio total_actual project.budget 100 %}%</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resource Allocation -->
+        <div class="col-md-4">
+            <div class="card planning-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Resource Allocation</h5>
+                    <a href="{% url 'myapp:resource_allocation_create' project.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Add Resource
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Resource</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>Period</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for allocation in resource_allocations %}
+                                <tr>
+                                    <td>{{ allocation.name }}</td>
+                                    <td><span class="badge bg-secondary">{{ allocation.get_resource_type_display }}</span></td>
+                                    <td>{{ allocation.quantity }} {{ allocation.unit }}</td>
+                                    <td>{{ allocation.start_date|date:"M d" }} - {{ allocation.end_date|date:"M d" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No resources allocated yet</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Planning Tasks -->
+        <div class="col-md-4">
+            <div class="card planning-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Planning Tasks</h5>
+                    <a href="{% url 'myapp:planning_task_create' project.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Add Task
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task_data in tasks_with_dependencies %}
+                                <tr>
+                                    <td>{{ task_data.task.title }}</td>
+                                    <td>{{ task_data.task.due_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <span class="badge {% if task_data.task.status == 'COMPLETED' %}bg-success{% else %}bg-warning{% endif %}">
+                                            {{ task_data.task.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'myapp:task_dependency_create' project.id task_data.task.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-link"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% if task_data.dependencies %}
+                                <tr>
+                                    <td colspan="4" class="ps-4 text-muted">
+                                        <small>
+                                            <i class="fas fa-level-up-alt fa-rotate-90 me-2"></i>
+                                            Depends on: 
+                                            {% for dep in task_data.dependencies %}
+                                                {{ dep.title }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No planning tasks created yet</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gantt Chart -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Project Timeline</h5>
+        </div>
+        <div class="card-body">
+            <div id="gantt"></div>
+        </div>
+    </div>
+
+    <!-- Budget Details -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Budget Details</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Category</th>
+                            <th>Estimated Cost</th>
+                            <th>Actual Cost</th>
+                            <th>Variance</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in budget_items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.get_category_display }}</td>
+                            <td>${{ item.estimated_cost|floatformat:2 }}</td>
+                            <td>${{ item.actual_cost|default:'0.00'|floatformat:2 }}</td>
+                            <td>
+                                {% with variance=item.get_variance %}
+                                {% if variance %}
+                                    <span class="{% if variance > 0 %}text-danger{% else %}text-success{% endif %}">
+                                        ${{ variance|floatformat:2 }}
+                                    </span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                {% if item.is_over_budget %}
+                                    <span class="badge bg-danger">Over Budget</span>
+                                {% else %}
+                                    <span class="badge bg-success">Within Budget</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No budget items added yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var tasks = [
+            {% for task_data in tasks_with_dependencies %}
+            {
+                id: '{{ task_data.task.id }}',
+                name: '{{ task_data.task.title }}',
+                start: '{{ task_data.task.start_date|date:"Y-m-d" }}',
+                end: '{{ task_data.task.due_date|date:"Y-m-d" }}',
+                progress: {{ task_data.task.progress }},
+                dependencies: [
+                    {% for dep in task_data.dependencies %}
+                    '{{ dep.id }}'{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        var gantt = new Gantt("#gantt", tasks, {
+            header_height: 50,
+            column_width: 30,
+            step: 24,
+            view_modes: ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'],
+            bar_height: 20,
+            bar_corner_radius: 3,
+            arrow_curve: 5,
+            padding: 18,
+            view_mode: 'Week',
+            date_format: 'YYYY-MM-DD',
+            custom_popup_html: function(task) {
+                return `
+                    <div class="details-container">
+                        <h5>${task.name}</h5>
+                        <p>
+                            <i class="fas fa-calendar-alt"></i> 
+                            ${moment(task.start).format('MMM D')} - ${moment(task.end).format('MMM D, YYYY')}
+                        </p>
+                        <p>
+                            <i class="fas fa-tasks"></i>
+                            Progress: ${task.progress}%
+                        </p>
+                    </div>
+                `;
+            }
+        });
+    });
+</script>
+{% endblock %}

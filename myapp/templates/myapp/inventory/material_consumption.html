@@ -1,0 +1,235 @@
+{% extends 'myapp/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Material Consumption</h2>
+        </div>
+        <div class="col text-end">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#consumptionModal">
+                <i class="fas fa-plus"></i> Record Consumption
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="material" class="form-label">Material</label>
+                    <select name="material" id="material" class="form-select">
+                        <option value="">All Materials</option>
+                        {% for material in materials %}
+                            <option value="{{ material.id }}" {% if selected_material == material.id %}selected{% endif %}>
+                                {{ material.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="warehouse" class="form-label">Warehouse</label>
+                    <select name="warehouse" id="warehouse" class="form-select">
+                        <option value="">All Warehouses</option>
+                        {% for warehouse in warehouses %}
+                            <option value="{{ warehouse.id }}" {% if selected_warehouse == warehouse.id %}selected{% endif %}>
+                                {{ warehouse.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from|default:'' }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to|default:'' }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">Filter</button>
+                    <a href="{% url 'myapp:material_consumption' %}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Consumption Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Material</th>
+                            <th>Warehouse</th>
+                            <th>Project</th>
+                            <th>Quantity</th>
+                            <th>Unit Cost</th>
+                            <th>Total Cost</th>
+                            <th>Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for consumption in consumptions %}
+                        <tr>
+                            <td>{{ consumption.date }}</td>
+                            <td>{{ consumption.material.name }}</td>
+                            <td>{{ consumption.warehouse.name }}</td>
+                            <td>{{ consumption.project.name }}</td>
+                            <td>{{ consumption.quantity }} {{ consumption.material.unit }}</td>
+                            <td>{{ consumption.unit_price }}</td>
+                            <td>{{ consumption.total_price }}</td>
+                            <td>{{ consumption.notes }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="editConsumption({{ consumption.id }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteConsumption({{ consumption.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center">No consumption transactions found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if consumptions.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if consumptions.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ consumptions.previous_page_number }}">&laquo;</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in consumptions.paginator.page_range %}
+                    <li class="page-item {% if consumptions.number == i %}active{% endif %}">
+                        <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if consumptions.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ consumptions.next_page_number }}">&raquo;</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Consumption Modal -->
+<div class="modal fade" id="consumptionModal" tabindex="-1" aria-labelledby="consumptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="consumptionModalLabel">Record Material Consumption</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" id="consumptionForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.material.label_tag }}
+                        {{ form.material }}
+                        {% if form.material.errors %}
+                            <div class="text-danger">{{ form.material.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.warehouse.label_tag }}
+                        {{ form.warehouse }}
+                        {% if form.warehouse.errors %}
+                            <div class="text-danger">{{ form.warehouse.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.project.label_tag }}
+                        {{ form.project }}
+                        {% if form.project.errors %}
+                            <div class="text-danger">{{ form.project.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.quantity.label_tag }}
+                        {{ form.quantity }}
+                        {% if form.quantity.errors %}
+                            <div class="text-danger">{{ form.quantity.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.notes.label_tag }}
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitConsumptionForm()">Save Consumption</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function submitConsumptionForm() {
+    document.getElementById('consumptionForm').submit();
+}
+
+function editConsumption(id) {
+    // Implement edit functionality
+}
+
+function deleteConsumption(id) {
+    if (confirm('Are you sure you want to delete this consumption record?')) {
+        // Implement delete functionality
+    }
+}
+
+// Add event listener to check available stock when material and warehouse are selected
+document.addEventListener('DOMContentLoaded', function() {
+    const materialSelect = document.getElementById('id_material');
+    const warehouseSelect = document.getElementById('id_warehouse');
+    const quantityInput = document.getElementById('id_quantity');
+
+    function checkAvailableStock() {
+        const materialId = materialSelect.value;
+        const warehouseId = warehouseSelect.value;
+        
+        if (materialId && warehouseId) {
+            fetch(`/api/check-stock/${materialId}/${warehouseId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.available_stock !== undefined) {
+                        quantityInput.setAttribute('max', data.available_stock);
+                        quantityInput.setAttribute('data-bs-toggle', 'tooltip');
+                        quantityInput.setAttribute('data-bs-placement', 'top');
+                        quantityInput.setAttribute('title', `Available stock: ${data.available_stock}`);
+                    }
+                });
+        }
+    }
+
+    materialSelect.addEventListener('change', checkAvailableStock);
+    warehouseSelect.addEventListener('change', checkAvailableStock);
+});
+</script>
+{% endblock %}
+
+{% endblock %}

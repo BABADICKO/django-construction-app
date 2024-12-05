@@ -1,13 +1,72 @@
 {% extends 'myapp/base.html' %}
+{% load static %}
+{% load myapp_filters %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <h2>Cost Analysis</h2>
     
-    <!-- Cost Distribution by Type -->
+    <!-- Summary Cards -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Budget</h5>
+                    <h3>${{ total_budget|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Actual Cost</h5>
+                    <h3>${{ total_actual_cost|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card {% if total_variance > 0 %}bg-danger{% else %}bg-success{% endif %} text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Variance</h5>
+                    <h3>${{ total_variance|floatformat:2 }}</h3>
+                    <small>{% if total_variance > 0 %}Over Budget{% else %}Under Budget{% endif %}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost Charts -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Budget vs Actual Costs</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="costComparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Cost Distribution</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="costDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Cost Analysis -->
     <div class="card mt-4">
         <div class="card-header">
-            <h4>Cost Distribution by Type</h4>
+            <h4>Cost Analysis by Type</h4>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -15,25 +74,33 @@
                     <thead>
                         <tr>
                             <th>Cost Type</th>
-                            <th>Total Amount</th>
-                            <th>Percentage</th>
+                            <th>Budgeted Amount</th>
+                            <th>Actual Amount</th>
+                            <th>Variance</th>
+                            <th>% of Total</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% with total_cost=cost_by_type.values|sum %}
-                        {% for type, amount in cost_by_type.items %}
+                        {% for item in combined_costs %}
                         <tr>
-                            <td>{{ type }}</td>
-                            <td>${{ amount }}</td>
-                            <td>{{ amount|div:total_cost|mul:100|floatformat:1 }}%</td>
+                            <td>{{ item.cost_type }}</td>
+                            <td>${{ item.budgeted|floatformat:2 }}</td>
+                            <td>${{ item.actual|floatformat:2 }}</td>
+                            <td class="{% if item.variance > 0 %}text-danger{% else %}text-success{% endif %}">
+                                ${{ item.variance|floatformat:2 }}
+                            </td>
+                            <td>{{ item.percentage|floatformat:1 }}%</td>
                         </tr>
                         {% endfor %}
                         <tr class="table-info">
                             <th>Total</th>
-                            <th>${{ total_cost }}</th>
+                            <th>${{ total_budget|floatformat:2 }}</th>
+                            <th>${{ total_actual_cost|floatformat:2 }}</th>
+                            <th class="{% if total_variance > 0 %}text-danger{% else %}text-success{% endif %}">
+                                ${{ total_variance|floatformat:2 }}
+                            </th>
                             <th>100%</th>
                         </tr>
-                        {% endwith %}
                     </tbody>
                 </table>
             </div>
@@ -81,4 +148,61 @@
         </div>
     </div>
 </div>
+
+{% block extra_scripts %}
+<script>
+    // Bar chart for budget vs actual costs
+    const comparisonCtx = document.getElementById('costComparisonChart').getContext('2d');
+    new Chart(comparisonCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_data.labels|safe }},
+            datasets: [{
+                label: 'Budgeted Cost',
+                data: {{ chart_data.budgeted_costs|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Actual Cost',
+                data: {{ chart_data.actual_costs|safe }},
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Pie chart for cost distribution
+    const distributionCtx = document.getElementById('costDistributionChart').getContext('2d');
+    new Chart(distributionCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ chart_data.labels|safe }},
+            datasets: [{
+                data: {{ chart_data.actual_costs|safe }},
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.5)',
+                    'rgba(54, 162, 235, 0.5)',
+                    'rgba(255, 206, 86, 0.5)',
+                    'rgba(75, 192, 192, 0.5)',
+                    'rgba(153, 102, 255, 0.5)',
+                ]
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+</script>
+{% endblock %}
+
 {% endblock %}

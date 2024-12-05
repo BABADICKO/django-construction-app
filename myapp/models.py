@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 from django.utils import timezone
+from .mixins import AuditLogMixin
 
 class Department(models.Model):
     name = models.CharField(max_length=100)
@@ -14,7 +15,7 @@ class Department(models.Model):
     class Meta:
         ordering = ['name']
 
-class CustomUser(models.Model):
+class CustomUser(AuditLogMixin, models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     department = models.ForeignKey(Department, on_delete=models.PROTECT)
     phone = models.CharField(max_length=20)
@@ -22,42 +23,61 @@ class CustomUser(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.department.name}"
+        
+    def has_role(self, role_name):
+        """Check if user has a specific role"""
+        return self.user.groups.filter(name=role_name).exists()
+    
+    def get_role(self):
+        """Get the user's current role"""
+        group = self.user.groups.first()
+        return group.name if group else None
+    
+    def has_perm(self, perm):
+        """Check if user has a specific permission"""
+        return self.user.has_perm(perm)
 
-class Project(models.Model):
+class Project(AuditLogMixin, models.Model):
     STATUS_CHOICES = [
-        ('PLANNING', 'Planning Phase'),
-        ('ONGOING', 'Ongoing'),
-        ('PAUSED', 'Paused'),
+        ('PLANNING', 'Planning'),
+        ('ACTIVE', 'Active'),
         ('COMPLETED', 'Completed'),
+        ('ON_HOLD', 'On Hold'),
         ('CANCELLED', 'Cancelled'),
     ]
-
+    
     name = models.CharField(max_length=200)
-    code = models.CharField(max_length=50, unique=True)
-    location = models.CharField(max_length=200)
     description = models.TextField()
     start_date = models.DateField()
-    planned_end_date = models.DateField()
+    end_date = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PLANNING')
-    progress = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
-    manager = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name='managed_projects')
-    total_budget = models.DecimalField(max_digits=15, decimal_places=2)
-    created_by = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name='created_projects')
-    created_at = models.DateTimeField(default=timezone.now)
+    budget = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    manager = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name='managed_projects', null=True, blank=True)
 
     def __str__(self):
-        return f"{self.code} - {self.name}"
+        return self.name
 
     class Meta:
         ordering = ['-created_at']
 
-    def update_progress(self):
-        tasks = self.tasks.all()
-        if tasks:
-            total_progress = sum(task.progress for task in tasks)
-            self.progress = total_progress // tasks.count()
-            self.save(update_fields=['progress'])
+    def get_total_planned_budget(self):
+        return self.budget_items.aggregate(
+            total=models.Sum('estimated_cost')
+        )['total'] or 0
+
+    def get_total_actual_cost(self):
+        return self.budget_items.aggregate(
+            total=models.Sum('actual_cost')
+        )['total'] or 0
+
+    def get_budget_variance(self):
+        return self.get_total_actual_cost() - self.get_total_planned_budget()
+
+    def is_over_budget(self):
+        return self.get_total_actual_cost() > self.get_total_planned_budget()
 
 class MaterialCategory(models.Model):
     name = models.CharField(max_length=100)
@@ -87,7 +107,7 @@ class MaterialSubcategory(models.Model):
         verbose_name_plural = "Material Subcategories"
         ordering = ['category__name', 'name']
 
-class Material(models.Model):
+class Material(AuditLogMixin, models.Model):
     UNIT_CHOICES = [
         ('KG', 'Kilogram'),
         ('L', 'Liter'),
@@ -116,7 +136,7 @@ class Material(models.Model):
     class Meta:
         ordering = ['category', 'subcategory', 'name']
 
-class Task(models.Model):
+class Task(AuditLogMixin, models.Model):
     STATUS_CHOICES = [
         ('NOT_STARTED', 'Not Started'),
         ('IN_PROGRESS', 'In Progress'),
@@ -124,7 +144,7 @@ class Task(models.Model):
         ('COMPLETED', 'Completed'),
         ('CANCELLED', 'Cancelled')
     ]
-
+    
     PRIORITY_CHOICES = [
         ('LOW', 'Low'),
         ('MEDIUM', 'Medium'),
@@ -132,6 +152,11 @@ class Task(models.Model):
         ('URGENT', 'Urgent')
     ]
 
+    PHASE_CHOICES = [
+        ('PLANNING', 'Planning'),
+        ('EXECUTION', 'Execution')
+    ]
+    
     title = models.CharField(max_length=200)
     description = models.TextField()
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
@@ -139,15 +164,24 @@ class Task(models.Model):
     created_by = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name='created_tasks')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NOT_STARTED')
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='MEDIUM')
+    phase = models.CharField(max_length=20, choices=PHASE_CHOICES, default='EXECUTION')
     progress = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     start_date = models.DateField()
     due_date = models.DateField()
     completed_date = models.DateField(null=True, blank=True)
+    estimated_hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    actual_hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title} - {self.project.name}"
+        return self.title
+
+    def get_dependent_tasks(self):
+        return Task.objects.filter(dependencies__depends_on=self)
+
+    def get_prerequisite_tasks(self):
+        return Task.objects.filter(dependents__task=self)
 
     class Meta:
         ordering = ['-priority', 'due_date']
@@ -162,18 +196,19 @@ class Task(models.Model):
         # Update project progress
         self.project.update_progress()
 
-class MaterialTransaction(models.Model):
+class MaterialTransaction(AuditLogMixin, models.Model):
     TRANSACTION_TYPES = [
         ('DELIVERY', 'Delivery'),
         ('CONSUMPTION', 'Consumption')
     ]
-
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='material_transactions')
+    
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='material_transactions', null=True, blank=True)
     material = models.ForeignKey(Material, on_delete=models.PROTECT, related_name='transactions')
+    warehouse = models.ForeignKey('Warehouse', on_delete=models.PROTECT, related_name='transactions', null=True, blank=True)
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
-    date = models.DateField()
+    date = models.DateField(default=timezone.now)
     supplier = models.CharField(max_length=200, blank=True, null=True)
     invoice_number = models.CharField(max_length=100, blank=True, null=True)
     notes = models.TextField(blank=True)
@@ -182,27 +217,22 @@ class MaterialTransaction(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.get_transaction_type_display()} - {self.material.name} ({self.quantity} {self.material.unit})"
+        return f"{self.transaction_type} - {self.material.name} ({self.quantity} {self.material.unit})"
 
-    @property
     def total_price(self):
         return self.quantity * self.unit_price
 
     def save(self, *args, **kwargs):
-        if self.transaction_type == 'DELIVERY':
-            self.material.current_stock += self.quantity
-        elif self.transaction_type == 'CONSUMPTION':
-            if self.material.current_stock < self.quantity:
-                raise ValueError(f"Insufficient stock. Only {self.material.current_stock} {self.material.unit} available.")
-            self.material.current_stock -= self.quantity
-        self.material.save()
+        if not self.date:
+            self.date = timezone.now().date()
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
+        # Reverse the stock update when deleting a transaction
         if self.transaction_type == 'DELIVERY':
             self.material.current_stock -= self.quantity
-        elif self.transaction_type == 'CONSUMPTION':
-            self.material.current_stock += self.quantity
+        else:  # CONSUMPTION
+            self.material.current_stock += abs(self.quantity)
         self.material.save()
         super().delete(*args, **kwargs)
 
@@ -258,7 +288,7 @@ class MaterialDelivery(models.Model):
         verbose_name_plural = "Material Deliveries"
         ordering = ['-delivery_date']
 
-class Equipment(models.Model):
+class Equipment(AuditLogMixin, models.Model):
     STATUS_CHOICES = [
         ('AVAILABLE', 'Available'),
         ('IN_USE', 'In Use'),
@@ -349,24 +379,23 @@ class EquipmentTransfer(models.Model):
     class Meta:
         ordering = ['-transfer_date']
 
-class Warehouse(models.Model):
-    name = models.CharField(max_length=200)
-    code = models.CharField(max_length=50, unique=True)
+class Warehouse(AuditLogMixin, models.Model):
+    name = models.CharField(max_length=100)
     location = models.CharField(max_length=200)
-    capacity = models.DecimalField(max_digits=15, decimal_places=2)  # in square meters or cubic meters
-    manager = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name='managed_warehouses')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='warehouses', null=True, blank=True)  # Making it nullable temporarily
+    manager = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.code} - {self.name}"
+        return f"{self.name} - {self.project.name if self.project else 'No Project'}"
 
     class Meta:
         ordering = ['name']
 
-class Subcontractor(models.Model):
+class Subcontractor(AuditLogMixin, models.Model):
     STATUS_CHOICES = [
         ('ACTIVE', 'Active'),
         ('INACTIVE', 'Inactive'),
@@ -486,3 +515,107 @@ class CostItem(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+class BudgetItem(models.Model):
+    CATEGORY_CHOICES = [
+        ('MATERIAL', 'Material'),
+        ('LABOR', 'Labor'),
+        ('EQUIPMENT', 'Equipment'),
+        ('SUBCONTRACTOR', 'Subcontractor'),
+        ('OVERHEAD', 'Overhead'),
+        ('OTHER', 'Other'),
+    ]
+    
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='budget_items')
+    name = models.CharField(max_length=200)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    description = models.TextField(blank=True)
+    estimated_cost = models.DecimalField(max_digits=12, decimal_places=2)
+    actual_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.project.name}"
+
+    def get_variance(self):
+        if self.actual_cost:
+            return self.actual_cost - self.estimated_cost
+        return None
+
+    def is_over_budget(self):
+        if self.actual_cost:
+            return self.actual_cost > self.estimated_cost
+        return False
+
+    class Meta:
+        ordering = ['category', 'name']
+
+class ResourceAllocation(models.Model):
+    RESOURCE_TYPE_CHOICES = [
+        ('MATERIAL', 'Material'),
+        ('EQUIPMENT', 'Equipment'),
+        ('LABOR', 'Labor'),
+    ]
+    
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='resource_allocations')
+    resource_type = models.CharField(max_length=50, choices=RESOURCE_TYPE_CHOICES)
+    name = models.CharField(max_length=200)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    unit = models.CharField(max_length=50)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.project.name}"
+
+    class Meta:
+        ordering = ['resource_type', 'start_date']
+
+class TaskDependency(models.Model):
+    DEPENDENCY_TYPE_CHOICES = [
+        ('FINISH_TO_START', 'Finish to Start'),
+        ('START_TO_START', 'Start to Start'),
+        ('FINISH_TO_FINISH', 'Finish to Finish'),
+        ('START_TO_FINISH', 'Start to Finish'),
+    ]
+    
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='dependencies')
+    depends_on = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='dependents')
+    dependency_type = models.CharField(max_length=20, choices=DEPENDENCY_TYPE_CHOICES, default='FINISH_TO_START')
+    lag_days = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.task.title} depends on {self.depends_on.title}"
+
+    class Meta:
+        ordering = ['task', 'depends_on']
+        verbose_name_plural = 'Task Dependencies'
+
+class Milestone(AuditLogMixin, models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    project = models.ForeignKey(
+        'Project', on_delete=models.CASCADE, related_name='milestones'
+    )
+    due_date = models.DateField()
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateField(null=True, blank=True)
+
+    def mark_as_completed(self):
+        self.is_completed = True
+        self.completed_at = timezone.now().date()
+        self.save()
+
+    def __str__(self):
+        return f"{self.name} (Due: {self.due_date})"
+
+    class Meta:
+        ordering = ['due_date']
+        verbose_name = "Milestone"
+        verbose_name_plural = "Milestones"

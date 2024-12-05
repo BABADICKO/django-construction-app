@@ -1,0 +1,91 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Import Equipment</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if messages %}
+                        <div class="alert alert-info">
+                            {% for message in messages %}
+                            <p{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-4">
+                            <h5>Instructions</h5>
+                            <p>Please follow these guidelines when preparing your import file:</p>
+                            <ol>
+                                <li>Use CSV format with the following columns:
+                                    <ul>
+                                        <li>name (required)</li>
+                                        <li>code (required, unique)</li>
+                                        <li>equipment_type (required)</li>
+                                        <li>manufacturer (required)</li>
+                                        <li>model_number (required)</li>
+                                        <li>serial_number (required, unique)</li>
+                                        <li>purchase_date (required, format: YYYY-MM-DD)</li>
+                                        <li>purchase_cost (required, decimal)</li>
+                                        <li>status (optional, default: AVAILABLE)</li>
+                                        <li>current_location (required)</li>
+                                        <li>description (optional)</li>
+                                        <li>notes (optional)</li>
+                                    </ul>
+                                </li>
+                                <li>Make sure all required fields are filled</li>
+                                <li>Dates should be in YYYY-MM-DD format</li>
+                                <li>Status should be one of: AVAILABLE, IN_USE, MAINTENANCE, REPAIR, RETIRED</li>
+                            </ol>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Select CSV File*</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+                            <div class="invalid-feedback">Please select a CSV file to import.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <a href="{% url 'myapp:equipment_list' %}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-file-import"></i> Import Equipment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form validation
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.getElementsByClassName('needs-validation');
+            var validation = Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+</script>
+{% endblock %}

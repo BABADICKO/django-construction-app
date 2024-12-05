@@ -1,0 +1,180 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}Add Task Dependency - {{ task.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dependency-type {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .dependency-type:hover {
+        transform: translateY(-2px);
+    }
+    .dependency-type.selected {
+        border-color: #0d6efd;
+        background-color: #f8f9fa;
+    }
+    .task-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .task-card:hover {
+        transform: translateX(5px);
+    }
+    .task-card.selected {
+        border-color: #0d6efd;
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Add Task Dependency</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading">Current Task: {{ task.title }}</h5>
+                        <p class="mb-0">Select which tasks this task depends on</p>
+                    </div>
+
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        {{ form.non_field_errors }}
+
+                        <div class="mb-4">
+                            <label class="form-label">Dependency Type</label>
+                            <div class="row g-3">
+                                {% for value, label in form.dependency_type.field.choices %}
+                                <div class="col-md-6">
+                                    <div class="card dependency-type p-3 text-center h-100 {% if form.dependency_type.value == value %}selected{% endif %}"
+                                         data-value="{{ value }}">
+                                        <div class="mb-2">
+                                            {% if value == 'FS' %}
+                                                <i class="fas fa-arrow-right fa-2x text-primary"></i>
+                                            {% elif value == 'FF' %}
+                                                <i class="fas fa-arrows-alt-h fa-2x text-success"></i>
+                                            {% elif value == 'SS' %}
+                                                <i class="fas fa-arrows-alt-h fa-2x text-warning"></i>
+                                            {% elif value == 'SF' %}
+                                                <i class="fas fa-arrow-left fa-2x text-danger"></i>
+                                            {% endif %}
+                                        </div>
+                                        <h6 class="mb-2">{{ label }}</h6>
+                                        <small class="text-muted">
+                                            {% if value == 'FS' %}
+                                                Task can't start until dependency finishes
+                                            {% elif value == 'FF' %}
+                                                Task must finish when dependency finishes
+                                            {% elif value == 'SS' %}
+                                                Task must start when dependency starts
+                                            {% elif value == 'SF' %}
+                                                Task can't finish until dependency starts
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {{ form.dependency_type.errors }}
+                            <input type="hidden" 
+                                   name="{{ form.dependency_type.name }}" 
+                                   id="{{ form.dependency_type.id_for_label }}"
+                                   value="{{ form.dependency_type.value|default:'' }}">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Select Dependent Tasks</label>
+                            <div class="list-group">
+                                {% for task_choice in form.dependent_tasks.field.choices %}
+                                <div class="list-group-item task-card p-3 {% if task_choice.0 in form.dependent_tasks.value %}selected{% endif %}"
+                                     data-task-id="{{ task_choice.0 }}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ task_choice.1 }}</h6>
+                                            <small class="text-muted">
+                                                Due: {{ task_choice.0.due_date|date:"M d, Y" }}
+                                            </small>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" 
+                                                   name="{{ form.dependent_tasks.name }}"
+                                                   value="{{ task_choice.0 }}"
+                                                   class="form-check-input"
+                                                   {% if task_choice.0 in form.dependent_tasks.value %}checked{% endif %}>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {{ form.dependent_tasks.errors }}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'myapp:project_planning' project.id %}" class="btn btn-secondary me-md-2">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Save Dependencies
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Handle dependency type selection
+    document.querySelectorAll('.dependency-type').forEach(function(element) {
+        element.addEventListener('click', function() {
+            // Remove selected class from all dependency types
+            document.querySelectorAll('.dependency-type').forEach(function(el) {
+                el.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked element
+            this.classList.add('selected');
+            
+            // Update hidden input
+            document.getElementById('{{ form.dependency_type.id_for_label }}').value = this.dataset.value;
+        });
+    });
+
+    // Handle task selection
+    document.querySelectorAll('.task-card').forEach(function(element) {
+        element.addEventListener('click', function(e) {
+            if (e.target.type !== 'checkbox') {
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                checkbox.checked = !checkbox.checked;
+                
+                // Toggle selected class
+                this.classList.toggle('selected', checkbox.checked);
+            }
+        });
+    });
+
+    // Form validation
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+{% endblock %}

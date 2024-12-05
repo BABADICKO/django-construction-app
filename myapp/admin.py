@@ -30,9 +30,9 @@ class MaterialAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'status', 'start_date', 'planned_end_date', 'manager']
-    list_filter = ['status', 'manager']
-    search_fields = ['code', 'name', 'manager__user__username']
+    list_display = ['name', 'status', 'start_date', 'end_date', 'budget']
+    list_filter = ['status', 'start_date']
+    search_fields = ['name', 'description']
     date_hierarchy = 'start_date'
 
 @admin.register(MaterialConsumption)
@@ -48,3 +48,11 @@ class MaterialDeliveryAdmin(admin.ModelAdmin):
     list_filter = ['project', 'material__category', 'delivery_date']
     search_fields = ['project__name', 'material__name', 'supplier', 'received_by__user__username']
     date_hierarchy = 'delivery_date'
+from django.contrib import admin
+from .models import Milestone
+
+@admin.register(Milestone)
+class MilestoneAdmin(admin.ModelAdmin):
+    list_display = ('name', 'project', 'due_date', 'is_completed', 'completed_at')
+    list_filter = ('is_completed', 'due_date', 'project')
+    search_fields = ('name', 'project__name')

@@ -1,0 +1,130 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{% if equipment %}Edit{% else %}Add{% endif %} Equipment</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Name*</label>
+                                    {{ form.name }}
+                                    <div class="invalid-feedback">{{ form.name.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="code" class="form-label">Code*</label>
+                                    {{ form.code }}
+                                    <div class="invalid-feedback">{{ form.code.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="equipment_type" class="form-label">Equipment Type*</label>
+                                    {{ form.equipment_type }}
+                                    <div class="invalid-feedback">{{ form.equipment_type.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="manufacturer" class="form-label">Manufacturer*</label>
+                                    {{ form.manufacturer }}
+                                    <div class="invalid-feedback">{{ form.manufacturer.errors }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="model_number" class="form-label">Model Number*</label>
+                                    {{ form.model_number }}
+                                    <div class="invalid-feedback">{{ form.model_number.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="serial_number" class="form-label">Serial Number*</label>
+                                    {{ form.serial_number }}
+                                    <div class="invalid-feedback">{{ form.serial_number.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="purchase_date" class="form-label">Purchase Date*</label>
+                                    {{ form.purchase_date }}
+                                    <div class="invalid-feedback">{{ form.purchase_date.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="purchase_cost" class="form-label">Purchase Cost*</label>
+                                    {{ form.purchase_cost }}
+                                    <div class="invalid-feedback">{{ form.purchase_cost.errors }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status*</label>
+                                    {{ form.status }}
+                                    <div class="invalid-feedback">{{ form.status.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="current_location" class="form-label">Current Location*</label>
+                                    {{ form.current_location }}
+                                    <div class="invalid-feedback">{{ form.current_location.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description</label>
+                                    {{ form.description }}
+                                    <div class="invalid-feedback">{{ form.description.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Notes</label>
+                                    {{ form.notes }}
+                                    <div class="invalid-feedback">{{ form.notes.errors }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Equipment
+                                </button>
+                                <a href="{% url 'myapp:equipment_list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Initialize date picker
+        $('#id_purchase_date').datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true
+        });
+
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    });
+</script>
+{% endblock %}

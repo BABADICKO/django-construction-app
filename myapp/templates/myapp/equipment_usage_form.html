@@ -1,0 +1,143 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Record Equipment Usage</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if messages %}
+                        <div class="alert alert-info">
+                            {% for message in messages %}
+                            <p{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipment" class="form-label">Equipment*</label>
+                                    {{ form.equipment }}
+                                    <div class="invalid-feedback">{{ form.equipment.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="project" class="form-label">Project*</label>
+                                    {{ form.project }}
+                                    <div class="invalid-feedback">{{ form.project.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="task" class="form-label">Task (Optional)</label>
+                                    {{ form.task }}
+                                    <div class="invalid-feedback">{{ form.task.errors }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">Start Date*</label>
+                                    {{ form.start_date }}
+                                    <div class="invalid-feedback">{{ form.start_date.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">End Date</label>
+                                    {{ form.end_date }}
+                                    <div class="invalid-feedback">{{ form.end_date.errors }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="hours_used" class="form-label">Hours Used*</label>
+                                    {{ form.hours_used }}
+                                    <div class="invalid-feedback">{{ form.hours_used.errors }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            {{ form.notes }}
+                            <div class="invalid-feedback">{{ form.notes.errors }}</div>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <a href="{% url 'myapp:equipment_list' %}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Record Usage
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Initialize date pickers
+        $('#id_start_date, #id_end_date').datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true
+        });
+
+        // Initialize select2 for better dropdown experience
+        $('#id_equipment, #id_project, #id_task').select2({
+            theme: 'bootstrap4',
+            width: '100%'
+        });
+
+        // Dynamic task loading based on project selection
+        $('#id_project').on('change', function() {
+            var projectId = $(this).val();
+            var taskSelect = $('#id_task');
+            
+            if (projectId) {
+                $.ajax({
+                    url: '/api/tasks/' + projectId + '/',
+                    type: 'GET',
+                    success: function(data) {
+                        taskSelect.empty();
+                        taskSelect.append('<option value="">---------</option>');
+                        $.each(data, function(index, item) {
+                            taskSelect.append(
+                                $('<option></option>')
+                                    .attr('value', item.id)
+                                    .text(item.title)
+                            );
+                        });
+                    }
+                });
+            } else {
+                taskSelect.empty();
+                taskSelect.append('<option value="">---------</option>');
+            }
+        });
+
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    });
+</script>
+{% endblock %}

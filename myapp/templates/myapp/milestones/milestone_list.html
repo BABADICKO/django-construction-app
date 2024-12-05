@@ -1,0 +1,73 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Milestones for {{ project.name }}</h2>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'myapp:add_milestone' project.id %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Milestone
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if milestones %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for milestone in milestones %}
+                                <tr>
+                                    <td>{{ milestone.name }}</td>
+                                    <td>{{ milestone.description|truncatewords:30 }}</td>
+                                    <td>{{ milestone.due_date }}</td>
+                                    <td>
+                                        {% if milestone.is_completed %}
+                                            <span class="badge bg-success">Completed on {{ milestone.completed_at }}</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if not milestone.is_completed %}
+                                            <form method="post" action="{% url 'myapp:mark_milestone_completed' milestone.id %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-check"></i> Mark Complete
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No milestones have been created for this project yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Add any JavaScript needed for milestone interactions
+</script>
+{% endblock %}
+{% endblock %}

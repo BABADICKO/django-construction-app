@@ -1,0 +1,82 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Maintenance Calendar</h1>
+
+    <!-- Action Buttons -->
+    <div class="mb-4">
+        <a href="{% url 'myapp:maintenance_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Maintenance Record
+        </a>
+        <a href="{% url 'myapp:maintenance_list' %}" class="btn btn-info">
+            <i class="fas fa-list"></i> List View
+        </a>
+        <a href="{% url 'myapp:maintenance_dashboard' %}" class="btn btn-success">
+            <i class="fas fa-chart-bar"></i> Dashboard
+        </a>
+    </div>
+
+    <!-- Calendar Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Maintenance Schedule</h6>
+        </div>
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: [
+                {% for maintenance in maintenance_records %}
+                {
+                    title: '{{ maintenance.equipment.name }} - {{ maintenance.get_maintenance_type_display }}',
+                    start: '{{ maintenance.scheduled_date|date:"Y-m-d" }}',
+                    {% if maintenance.completed_date %}
+                    color: '#1cc88a',  // green for completed
+                    {% else %}
+                    color: '#f6c23e',  // yellow for pending
+                    {% endif %}
+                    url: '{% url "myapp:maintenance_edit" maintenance.id %}',
+                    description: '{{ maintenance.description|truncatechars:100|escapejs }}'
+                },
+                {% endfor %}
+            ],
+            eventClick: function(info) {
+                if (info.event.url) {
+                    window.location.href = info.event.url;
+                    info.jsEvent.preventDefault();
+                }
+            },
+            eventDidMount: function(info) {
+                $(info.el).tooltip({
+                    title: info.event.extendedProps.description,
+                    placement: 'top',
+                    trigger: 'hover',
+                    container: 'body'
+                });
+            }
+        });
+        calendar.render();
+    });
+</script>
+{% endblock %}

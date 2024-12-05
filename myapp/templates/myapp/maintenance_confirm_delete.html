@@ -1,0 +1,30 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Confirm Delete</h6>
+                </div>
+                <div class="card-body">
+                    <p>Are you sure you want to delete the following maintenance record?</p>
+                    <ul class="list-unstyled">
+                        <li><strong>Equipment:</strong> {{ maintenance.equipment.name }}</li>
+                        <li><strong>Type:</strong> {{ maintenance.get_maintenance_type_display }}</li>
+                        <li><strong>Scheduled Date:</strong> {{ maintenance.scheduled_date }}</li>
+                        <li><strong>Cost:</strong> ${{ maintenance.cost|floatformat:2 }}</li>
+                    </ul>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                        <a href="{% url 'myapp:maintenance_list' %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

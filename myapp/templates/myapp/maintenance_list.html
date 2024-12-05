@@ -1,0 +1,85 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Maintenance Records</h1>
+
+    <!-- Action Buttons -->
+    <div class="mb-4">
+        <a href="{% url 'myapp:maintenance_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Maintenance Record
+        </a>
+        <a href="{% url 'myapp:maintenance_dashboard' %}" class="btn btn-info">
+            <i class="fas fa-chart-bar"></i> Dashboard
+        </a>
+        <a href="{% url 'myapp:maintenance_calendar' %}" class="btn btn-success">
+            <i class="fas fa-calendar"></i> Calendar View
+        </a>
+    </div>
+
+    <!-- Maintenance Records Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">All Maintenance Records</h6>
+        </div>
+        <div class="card-body">
+            {% if maintenance_records %}
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Equipment</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Scheduled Date</th>
+                                <th>Completed Date</th>
+                                <th>Cost</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for maintenance in maintenance_records %}
+                            <tr>
+                                <td>{{ maintenance.equipment.name }}</td>
+                                <td>{{ maintenance.get_maintenance_type_display }}</td>
+                                <td>{{ maintenance.description|truncatechars:50 }}</td>
+                                <td>{{ maintenance.scheduled_date }}</td>
+                                <td>{{ maintenance.completed_date|default:"-" }}</td>
+                                <td>${{ maintenance.cost|floatformat:2 }}</td>
+                                <td>
+                                    {% if maintenance.completed_date %}
+                                        <span class="badge badge-success">Completed</span>
+                                    {% else %}
+                                        <span class="badge badge-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'myapp:maintenance_edit' maintenance.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'myapp:maintenance_delete' maintenance.id %}" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center">No maintenance records found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#dataTable').DataTable();
+    });
+</script>
+{% endblock %}

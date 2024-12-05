@@ -1,0 +1,8 @@
+
+<h2>Add Milestone to Project: {{ project.name }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save Milestone</button>
+</form>
+<a href="{% url 'milestone_list' project.id %}">Back to Milestones</a>

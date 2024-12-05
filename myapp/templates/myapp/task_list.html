@@ -1,22 +1,36 @@
 {% extends 'myapp/base.html' %}
 {% load static %}
+{% load myapp_filters %}
 
 {% block content %}
 <div class="container-fluid">
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <div>
-            <h1 class="h3 mb-0 text-gray-800">Tasks for {{ project.name }}</h1>
+            <h1 class="h3 mb-0 text-gray-800">
+                {% if project %}
+                    Tasks for {{ project.name }}
+                {% else %}
+                    All Tasks
+                {% endif %}
+            </h1>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projects</a></li>
-                    <li class="breadcrumb-item active">{{ project.name }} Tasks</li>
+                    {% if project %}
+                        <li class="breadcrumb-item"><a href="{% url 'myapp:project_list' %}">Projects</a></li>
+                        <li class="breadcrumb-item active">{{ project.name }} Tasks</li>
+                    {% else %}
+                        <li class="breadcrumb-item"><a href="{% url 'myapp:project_list' %}">Projects</a></li>
+                        <li class="breadcrumb-item active">All Tasks</li>
+                    {% endif %}
                 </ol>
             </nav>
         </div>
-        <a href="{% url 'add_task' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+        {% if request.user.customuser.has_role == 'Admin' or request.user.customuser.has_role == 'Project Manager' %}
+        <a href="{% url 'myapp:task_create' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
             <i class="fas fa-plus fa-sm text-white-50"></i> Add New Task
         </a>
+        {% endif %}
     </div>
 
     <!-- Task Statistics Cards -->
@@ -29,10 +43,29 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total Tasks</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ tasks.count }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ tasks|length }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks In Progress Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">In Progress</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ tasks|filter_status:'IN_PROGRESS'|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-spinner fa-2x text-gray-300"></i>
                         </div>
                     </div>
                 </div>
@@ -45,10 +78,9 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Completed Tasks</div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Completed</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ tasks.filter.status='COMPLETED'|length }}
+                                {{ tasks|filter_status:'COMPLETED'|length }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -59,40 +91,19 @@
             </div>
         </div>
 
-        <!-- In Progress Tasks Card -->
+        <!-- Overdue Tasks Card -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
+            <div class="card border-left-danger shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                In Progress</div>
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Overdue</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ tasks.filter.status='IN_PROGRESS'|length }}
+                                {{ overdue_tasks|length }}
                             </div>
                         </div>
                         <div class="col-auto">
-                            <i class="fas fa-spinner fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pending Tasks Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Pending Tasks</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ tasks.filter.status='PENDING'|length }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
                         </div>
                     </div>
                 </div>
@@ -100,64 +111,78 @@
         </div>
     </div>
 
-    <!-- Tasks List -->
+    <!-- Tasks Table -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">All Tasks</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Task List</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered" id="tasksTable" width="100%" cellspacing="0">
                     <thead>
                         <tr>
-                            <th>Task Title</th>
-                            <th>Description</th>
+                            <th>Title</th>
+                            <th>Project</th>
                             <th>Assigned To</th>
                             <th>Status</th>
-                            <th>Progress</th>
                             <th>Priority</th>
-                            <th>Start Date</th>
-                            <th>End Date</th>
+                            <th>Due Date</th>
+                            <th>Progress</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for task in tasks %}
                         <tr>
-                            <td>{{ task.title }}</td>
-                            <td>{{ task.description|truncatewords:30 }}</td>
+                            <td>
+                                <a href="{% url 'myapp:task_detail' task.pk %}">{{ task.title }}</a>
+                            </td>
+                            <td>{{ task.project.name }}</td>
                             <td>{{ task.assigned_to }}</td>
                             <td>
-                                <span class="badge badge-{{ task.status|lower }}">
+                                <span class="badge bg-{{ task.status|lower }}">
                                     {{ task.get_status_display }}
                                 </span>
                             </td>
                             <td>
+                                <span class="badge bg-{{ task.priority|lower }}">
+                                    {{ task.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>{{ task.due_date }}</td>
+                            <td>
                                 <div class="progress">
-                                    <div class="progress-bar" role="progressbar" style="width: {{ task.progress }}%"
-                                        aria-valuenow="{{ task.progress }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ task.progress }}%"
+                                         aria-valuenow="{{ task.progress }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
                                         {{ task.progress }}%
                                     </div>
                                 </div>
                             </td>
                             <td>
-                                <span class="badge badge-{{ task.priority|lower }}">
-                                    {{ task.get_priority_display }}
-                                </span>
-                            </td>
-                            <td>{{ task.start_date }}</td>
-                            <td>{{ task.end_date }}</td>
-                            <td>
-                                <div class="btn-group">
-                                    <a href="{% url 'edit_task' task.id %}" class="btn btn-info btn-sm" title="Edit Task">
+                                <div class="btn-group" role="group">
+                                    {% if request.user.customuser.has_role == 'Admin' or request.user.customuser.has_role == 'Project Manager' or task.assigned_to == request.user.customuser %}
+                                    <a href="{% url 'myapp:task_edit' task.pk %}" 
+                                       class="btn btn-sm btn-primary">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button type="button" class="btn btn-danger btn-sm" title="Delete Task"
-                                            onclick="confirmDelete('{{ task.id }}')">
+                                    {% endif %}
+                                    
+                                    {% if request.user.customuser.has_role == 'Admin' or request.user.customuser.has_role == 'Project Manager' %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger" 
+                                            onclick="confirmDelete({{ task.pk }})">
                                         <i class="fas fa-trash"></i>
                                     </button>
+                                    {% endif %}
                                 </div>
                             </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No tasks found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -178,11 +203,11 @@
                 </button>
             </div>
             <div class="modal-body">
-                Are you sure you want to delete this task? This action cannot be undone.
+                Are you sure you want to delete this task?
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <form id="deleteForm" method="POST" style="display: inline;">
+                <form id="deleteForm" method="POST">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
@@ -190,25 +215,15 @@
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
-        $('#tasksTable').DataTable({
-            "order": [[6, "desc"]], // Sort by start date by default
-            "pageLength": 10,
-            "language": {
-                "search": "Search tasks:",
-                "lengthMenu": "Show _MENU_ tasks per page",
-                "info": "Showing _START_ to _END_ of _TOTAL_ tasks"
-            }
-        });
-    });
-
-    function confirmDelete(taskId) {
-        $('#deleteForm').attr('action', `/tasks/${taskId}/delete/`);
-        $('#deleteModal').modal('show');
-    }
+function confirmDelete(taskId) {
+    const form = document.getElementById('deleteForm');
+    form.action = `/tasks/${taskId}/delete/`;
+    $('#deleteModal').modal('show');
+}
 </script>
 {% endblock %}

@@ -1,0 +1,169 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Maintenance Dashboard</h1>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <!-- Total Maintenance -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Maintenance Records</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_maintenance }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tools fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Maintenance -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pending Maintenance</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_maintenance }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Maintenance -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Completed Maintenance</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_maintenance }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Cost -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Maintenance Cost</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_cost|floatformat:2 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Upcoming Maintenance -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Upcoming Maintenance</h6>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_maintenance %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Equipment</th>
+                                        <th>Type</th>
+                                        <th>Scheduled Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for maintenance in upcoming_maintenance %}
+                                    <tr>
+                                        <td>{{ maintenance.equipment.name }}</td>
+                                        <td>{{ maintenance.get_maintenance_type_display }}</td>
+                                        <td>{{ maintenance.scheduled_date }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center">No upcoming maintenance scheduled.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance by Type -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Maintenance by Type</h6>
+                </div>
+                <div class="card-body">
+                    {% if maintenance_by_type %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in maintenance_by_type %}
+                                    <tr>
+                                        <td>{{ item.maintenance_type }}</td>
+                                        <td>{{ item.count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center">No maintenance records found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col">
+            <a href="{% url 'myapp:maintenance_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Maintenance Record
+            </a>
+            <a href="{% url 'myapp:maintenance_list' %}" class="btn btn-info">
+                <i class="fas fa-list"></i> View All Records
+            </a>
+            <a href="{% url 'myapp:maintenance_calendar' %}" class="btn btn-success">
+                <i class="fas fa-calendar"></i> Maintenance Calendar
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

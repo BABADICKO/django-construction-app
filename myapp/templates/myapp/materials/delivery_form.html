@@ -5,6 +5,13 @@
 
 {% block content %}
 <div class="container mt-4">
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'myapp:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'myapp:material_list' %}">Materials</a></li>
+            <li class="breadcrumb-item active">Record Delivery</li>
+        </ol>
+    </nav>
     <div class="card">
         <div class="card-header">
             <h5 class="mb-0">Record Material Delivery</h5>
@@ -118,7 +125,7 @@
                 </div>
 
                 <div class="d-flex justify-content-between">
-                    <a href="{% url 'material_list' %}" class="btn btn-secondary">
+                    <a href="{% url 'myapp:material_list' %}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Back to List
                     </a>
                     <button type="submit" class="btn btn-primary">

@@ -1,17 +1,18 @@
 {% extends 'myapp/base.html' %}
 {% load static %}
+{% load mathfilters %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Project Dashboard</h1>
-        <a href="{% url 'add_project' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+        <a href="{% url 'myapp:project_create' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
             <i class="fas fa-plus fa-sm text-white-50"></i> Add New Project
         </a>
     </div>
 
     <div class="row">
-        <!-- Project Status Overview Card -->
+        <!-- Total Projects Card -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
@@ -19,7 +20,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total Projects</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ projects.count }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_projects }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
@@ -37,9 +38,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Active Projects</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ projects.filter.status='ACTIVE'|length }}
-                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_projects }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-calendar fa-2x text-gray-300"></i>
@@ -49,96 +48,104 @@
             </div>
         </div>
 
-        <!-- Completed Projects Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
+        <!-- Project Status Breakdown -->
+        <div class="col-xl-6 col-md-12 mb-4">
             <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Completed Projects</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ projects.filter.status='COMPLETED'|length }}
+                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Projects by Status</div>
+                    {% for status in projects_by_status %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>{{ status.status }}</span>
+                            <span class="font-weight-bold">{{ status.count }}</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {% widthratio status.count total_projects 100 %}%;" 
+                                 aria-valuenow="{{ status.count }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="{{ total_projects }}">
                             </div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
-                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- On Hold Projects Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                On Hold Projects</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                {{ projects.filter.status='ON_HOLD'|length }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-pause-circle fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Project List -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Recent Projects</h6>
+    <div class="row">
+        <!-- Recent Tasks -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Tasks</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Project</th>
+                                    <th>Status</th>
+                                    <th>Assigned To</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in recent_tasks %}
+                                <tr>
+                                    <td>{{ task.title }}</td>
+                                    <td>{{ task.project.name }}</td>
+                                    <td>
+                                        <span class="badge {% if task.status == 'COMPLETED' %}bg-success{% elif task.status == 'IN_PROGRESS' %}bg-primary{% else %}bg-warning{% endif %}">
+                                            {{ task.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ task.assigned_to.username }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No recent tasks</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered" id="projectsTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>Project Name</th>
-                            <th>Status</th>
-                            <th>Progress</th>
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for project in projects %}
-                        <tr>
-                            <td>{{ project.name }}</td>
-                            <td>
-                                <span class="badge badge-{{ project.status|lower }}">
-                                    {{ project.get_status_display }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="progress">
-                                    <div class="progress-bar" role="progressbar" style="width: {{ project.progress }}%"
-                                        aria-valuenow="{{ project.progress }}" aria-valuemin="0" aria-valuemax="100">
-                                        {{ project.progress }}%
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ project.start_date }}</td>
-                            <td>{{ project.end_date }}</td>
-                            <td>
-                                <a href="{% url 'edit_project' project.id %}" class="btn btn-info btn-sm">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a href="{% url 'task_list' project.id %}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-tasks"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+        <!-- Material Consumption by Project -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Material Consumption by Project</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Project</th>
+                                    <th>Total Consumption</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in material_by_project %}
+                                <tr>
+                                    <td>{{ item.project__name }}</td>
+                                    <td>{{ item.total_consumption }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-center">No consumption data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -147,8 +154,8 @@
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
-        $('#projectsTable').DataTable();
-    });
+$(document).ready(function() {
+    // Initialize any JavaScript components here
+});
 </script>
 {% endblock %}

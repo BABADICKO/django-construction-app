@@ -1,0 +1,115 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}Task Details - {{ task.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Task Details</h3>
+                    <div>
+                        {% if can_edit %}
+                        <a href="{% url 'myapp:task_edit' task.pk %}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Edit Task
+                        </a>
+                        {% endif %}
+                        {% if request.user.customuser.has_role 'Admin' or request.user.customuser.has_role 'Project Manager' %}
+                        <a href="{% url 'myapp:task_delete' task.pk %}" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Delete Task
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Basic Information</h5>
+                            <table class="table">
+                                <tr>
+                                    <th>Title:</th>
+                                    <td>{{ task.title }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Project:</th>
+                                    <td>{{ task.project.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td><span class="badge bg-{{ task.status|lower }}">{{ task.get_status_display }}</span></td>
+                                </tr>
+                                <tr>
+                                    <th>Priority:</th>
+                                    <td><span class="badge bg-{{ task.priority|lower }}">{{ task.get_priority_display }}</span></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Timeline & Assignment</h5>
+                            <table class="table">
+                                <tr>
+                                    <th>Start Date:</th>
+                                    <td>{{ task.start_date }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Due Date:</th>
+                                    <td>{{ task.due_date }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Assigned To:</th>
+                                    <td>{{ task.assigned_to }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Created By:</th>
+                                    <td>{{ task.created_by }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Description</h5>
+                            <div class="card">
+                                <div class="card-body">
+                                    {{ task.description|linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5>Progress</h5>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ task.progress }}%"
+                                     aria-valuenow="{{ task.progress }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ task.progress }}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Time Estimates</h5>
+                            <table class="table">
+                                <tr>
+                                    <th>Estimated Hours:</th>
+                                    <td>{{ task.estimated_hours }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Actual Hours:</th>
+                                    <td>{{ task.actual_hours }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

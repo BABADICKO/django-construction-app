@@ -1,0 +1,161 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'myapp:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'myapp:material_list' %}">Materials</a></li>
+            <li class="breadcrumb-item active">Material Transactions</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Material Transactions</h2>
+        <div class="btn-group">
+            <a href="{% url 'myapp:materials_delivery' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Record Delivery
+            </a>
+            <a href="{% url 'myapp:materials_consumption' %}" class="btn btn-warning">
+                <i class="fas fa-minus"></i> Record Consumption
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="material" class="form-label">Material</label>
+                    <select class="form-select" id="material" name="material">
+                        <option value="">All Materials</option>
+                        {% for material in materials %}
+                        <option value="{{ material.id }}" {% if selected_material == material.id %}selected{% endif %}>
+                            {{ material.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="warehouse" class="form-label">Warehouse</label>
+                    <select class="form-select" id="warehouse" name="warehouse">
+                        <option value="">All Warehouses</option>
+                        {% for wh in warehouses %}
+                        <option value="{{ wh.id }}" {% if selected_warehouse == wh.id %}selected{% endif %}>
+                            {{ wh.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" 
+                           value="{{ date_from|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" 
+                           value="{{ date_to|date:'Y-m-d' }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <a href="{% url 'myapp:material_transaction' %}" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delivery Transactions -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0"><i class="fas fa-truck"></i> Material Deliveries</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Material</th>
+                            <th>Warehouse</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total Amount</th>
+                            <th>Supplier</th>
+                            <th>Invoice #</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in delivery_transactions %}
+                        <tr>
+                            <td>{{ transaction.date|date:"Y-m-d" }}</td>
+                            <td>{{ transaction.material.name }}</td>
+                            <td>{{ transaction.warehouse.name }}</td>
+                            <td>{{ transaction.quantity }} {{ transaction.material.unit }}</td>
+                            <td>${{ transaction.unit_price|floatformat:2 }}</td>
+                            <td>${{ transaction.total_amount|floatformat:2 }}</td>
+                            <td>{{ transaction.supplier|default:"-" }}</td>
+                            <td>{{ transaction.invoice_number|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No delivery transactions found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consumption Transactions -->
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h4 class="mb-0"><i class="fas fa-box-open"></i> Material Consumption</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Material</th>
+                            <th>Warehouse</th>
+                            <th>Project</th>
+                            <th>Quantity</th>
+                            <th>Unit Cost</th>
+                            <th>Total Cost</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in consumption_transactions %}
+                        <tr>
+                            <td>{{ transaction.date|date:"Y-m-d" }}</td>
+                            <td>{{ transaction.material.name }}</td>
+                            <td>{{ transaction.warehouse.name }}</td>
+                            <td>{{ transaction.project.name }}</td>
+                            <td>{{ transaction.quantity }} {{ transaction.material.unit }}</td>
+                            <td>${{ transaction.unit_price|floatformat:2 }}</td>
+                            <td>${{ transaction.total_amount|floatformat:2 }}</td>
+                            <td>{{ transaction.notes|truncatechars:30|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No consumption transactions found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

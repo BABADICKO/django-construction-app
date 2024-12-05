@@ -11,16 +11,16 @@
             <h2 class="mb-0">Materials Inventory</h2>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'myapp:home' %}">Dashboard</a></li>
                     <li class="breadcrumb-item active">Materials</li>
                 </ol>
             </nav>
         </div>
         <div class="d-flex gap-2">
-            <a href="{% url 'record_delivery' %}" class="btn btn-success">
+            <a href="{% url 'myapp:materials_delivery' %}" class="btn btn-success">
                 <i class="fas fa-truck"></i> Record Delivery
             </a>
-            <a href="{% url 'create_material' %}" class="btn btn-primary">
+            <a href="{% url 'myapp:material_create' %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Add Material
             </a>
         </div>
@@ -165,17 +165,17 @@
                             </button>
                             <ul class="dropdown-menu">
                                 <li>
-                                    <a class="dropdown-item" href="{% url 'material_detail' material.id %}">
+                                    <a class="dropdown-item" href="{% url 'myapp:material_detail' material.id %}">
                                         <i class="fas fa-eye"></i> View Details
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{% url 'edit_material' material.id %}">
+                                    <a class="dropdown-item" href="{% url 'myapp:material_edit' material.id %}">
                                         <i class="fas fa-edit"></i> Edit
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{% url 'record_consumption' %}?material={{ material.id }}">
+                                    <a class="dropdown-item" href="{% url 'myapp:record_consumption' %}?material={{ material.id }}">
                                         <i class="fas fa-minus-circle"></i> Record Consumption
                                     </a>
                                 </li>
@@ -238,7 +238,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <form action="{% url 'delete_material' material.id %}" method="POST" style="display: inline;">
+                        <form action="{% url 'myapp:material_delete' material.id %}" method="POST" style="display: inline;">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger">Delete Material</button>
                         </form>
@@ -253,7 +253,7 @@
                     <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
                     <h5>No Materials Found</h5>
                     <p class="text-muted">Start by adding your first material</p>
-                    <a href="{% url 'create_material' %}" class="btn btn-primary">
+                    <a href="{% url 'myapp:material_create' %}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Add Material
                     </a>
                 </div>

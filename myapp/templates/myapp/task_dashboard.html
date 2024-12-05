@@ -1,0 +1,133 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+{% load mathfilters %}
+
+{% block title %}Task Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Task Dashboard</h1>
+
+    <!-- Task Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Tasks</h5>
+                    <h2 class="card-text">{{ total_tasks }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Overdue Tasks</h5>
+                    <h2 class="card-text text-danger">{{ overdue_tasks }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Tasks by Status -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tasks by Status</h5>
+                </div>
+                <div class="card-body">
+                    {% for status in tasks_by_status %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>{{ status.status }}</span>
+                            <span class="badge bg-primary">{{ status.count }}</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar" role="progressbar" 
+                                style="width: {% widthratio status.count total_tasks 100 %}%">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks by Priority -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tasks by Priority</h5>
+                </div>
+                <div class="card-body">
+                    {% for priority in tasks_by_priority %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>{{ priority.priority }}</span>
+                            <span class="badge {% if priority.priority == 'HIGH' %}bg-danger{% elif priority.priority == 'MEDIUM' %}bg-warning{% else %}bg-success{% endif %}">
+                                {{ priority.count }}
+                            </span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar" role="progressbar" 
+                                style="width: {% widthratio priority.count total_tasks 100 %}%">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Tasks by Assignee -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tasks by Assignee</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for assignee in tasks_by_assignee %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ assignee.assigned_to__user__username|default:"Unassigned" }}
+                            <span class="badge bg-primary rounded-pill">{{ assignee.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Tasks -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Tasks</h5>
+                    <a href="{% url 'myapp:task_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for task in recent_tasks %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ task.title }}</h6>
+                                <small class="text-muted">{{ task.due_date|date:"M d" }}</small>
+                            </div>
+                            <p class="mb-1">{{ task.description|truncatechars:100 }}</p>
+                            <small class="text-muted">
+                                {{ task.project.name }} | 
+                                <span class="badge {% if task.status == 'COMPLETED' %}bg-success{% elif task.status == 'IN_PROGRESS' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ task.get_status_display }}
+                                </span>
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
