@@ -398,3 +398,26 @@ class TaskForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if project:
             self.instance.project = project
+
+class MaterialDeliveryForm(forms.ModelForm):
+    warehouse = forms.ModelChoiceField(
+        queryset=Warehouse.objects.filter(is_active=True),
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='Destination Warehouse'
+    )
+    
+    class Meta:
+        model = MaterialTransaction
+        fields = [
+            'material', 'project', 'quantity', 'unit_price',
+            'supplier', 'invoice_number', 'notes'
+        ]
+        widgets = {
+            'material': forms.Select(attrs={'class': 'form-control'}),
+            'project': forms.Select(attrs={'class': 'form-control'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '0.01', 'step': '0.01'}),
+            'unit_price': forms.NumberInput(attrs={'class': 'form-control', 'min': '0.01', 'step': '0.01'}),
+            'supplier': forms.TextInput(attrs={'class': 'form-control'}),
+            'invoice_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }

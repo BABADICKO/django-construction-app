@@ -5,14 +5,14 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import F, Value, CharField, Count, Sum, Avg, Q, DecimalField, ExpressionWrapper
 from django.db.models.functions import Coalesce, TruncMonth, Trunc
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from itertools import chain
 from .models import Task, Project, CustomUser, Material, Equipment, MaterialCategory, MaterialSubcategory, MaterialTransaction, Warehouse, Subcontractor, EquipmentMaintenance, Milestone, BudgetItem, ResourceAllocation, TaskDependency, CostItem, CostCenter
-from .forms import TaskForm, ProjectForm, MaterialForm, EquipmentForm, EquipmentUsageForm, EquipmentTransferForm, WarehouseForm, StockTransferForm, MaterialTransactionForm, SubcontractorForm, MaintenanceForm, MilestoneForm, BudgetItemForm, ResourceAllocationForm, TaskDependencyForm, CostItemForm
+from .forms import TaskForm, ProjectForm, MaterialForm, EquipmentForm, EquipmentUsageForm, EquipmentTransferForm, WarehouseForm, StockTransferForm, MaterialTransactionForm, SubcontractorForm, MaintenanceForm, MilestoneForm, BudgetItemForm, ResourceAllocationForm, TaskDependencyForm, CostItemForm, MaterialDeliveryForm
 from .decorators import role_required, admin_required, project_manager_required, worker_or_above_required
 from .roles import assign_role_to_user
 import csv
@@ -353,99 +353,88 @@ def material_delete(request, material_id):
 @login_required
 def record_consumption(request):
     if request.method == 'POST':
+        material_id = request.POST.get('material')
+        warehouse_id = request.POST.get('warehouse')
+        project_id = request.POST.get('project')
+        task_id = request.POST.get('task')
+        quantity = request.POST.get('quantity')
+        notes = request.POST.get('notes', '')
+
         try:
-            material_id = request.POST.get('material')
-            project_id = request.POST.get('project')
-            quantity = request.POST.get('quantity')
-            unit_price = request.POST.get('unit_price')
-            date = request.POST.get('date')
-            notes = request.POST.get('notes')
-            
-            # Get the material
             material = Material.objects.get(id=material_id)
-            
-            # Check if we have enough stock
-            if material.current_stock < Decimal(quantity):
-                messages.error(request, f'Not enough stock! Available: {material.current_stock} {material.unit}')
-                return redirect('record_consumption')
-            
-            # Create consumption record
-            consumption = MaterialConsumption.objects.create(
-                material_id=material_id,
-                project_id=project_id,
+            warehouse = Warehouse.objects.get(id=warehouse_id)
+            project = Project.objects.get(id=project_id)
+            task = Task.objects.get(id=task_id)
+            quantity = Decimal(quantity)
+
+            # Check if there's enough stock
+            if quantity > material.current_stock:
+                messages.error(request, f'Not enough stock available for {material.name}')
+                return redirect('myapp:record_consumption')
+
+            # Create material transaction
+            MaterialTransaction.objects.create(
+                material=material,
+                warehouse=warehouse,
+                project=project,
+                task=task,
+                transaction_type='consumption',
                 quantity=quantity,
-                unit_price=unit_price,
-                date=date,
                 notes=notes,
-                recorded_by=request.user.customuser
+                created_by=request.user
             )
-            
+
             # Update material stock
-            material.current_stock -= Decimal(quantity)
+            material.current_stock = F('current_stock') - quantity
             material.save()
-            
-            messages.success(request, 'Consumption recorded successfully!')
-            return redirect('material_detail', material_id=material_id)
-            
+
+            messages.success(request, f'Successfully recorded consumption of {quantity} {material.unit} of {material.name}')
+            return redirect('myapp:material_list')
+
+        except (Material.DoesNotExist, Warehouse.DoesNotExist, Project.DoesNotExist, Task.DoesNotExist):
+            messages.error(request, 'Invalid selection. Please check your inputs.')
+        except (ValueError, decimal.InvalidOperation):
+            messages.error(request, 'Invalid quantity value.')
         except Exception as e:
-            messages.error(request, f'Error recording consumption: {str(e)}')
-            return redirect('record_consumption')
-    
-    # Get active projects and materials for the form
-    projects = Project.objects.filter(status='ONGOING')
-    materials = Material.objects.all()
-    
-    return render(request, 'myapp/materials/consumption_form.html', {
-        'projects': projects,
-        'materials': materials
-    })
+            messages.error(request, f'An error occurred: {str(e)}')
+
+    # GET request - show the form
+    context = {
+        'materials': Material.objects.all(),
+        'warehouses': Warehouse.objects.all(),
+        'projects': Project.objects.all(),
+    }
+    return render(request, 'myapp/record_consumption.html', context)
 
 @login_required
 def record_delivery(request):
     if request.method == 'POST':
-        try:
-            material_id = request.POST.get('material')
-            project_id = request.POST.get('project')
-            quantity = request.POST.get('quantity')
-            unit_price = request.POST.get('unit_price')
-            supplier = request.POST.get('supplier')
-            delivery_date = request.POST.get('delivery_date')
-            invoice_number = request.POST.get('invoice_number')
-            notes = request.POST.get('notes')
-            
-            # Create delivery record
-            delivery = MaterialDelivery.objects.create(
-                material_id=material_id,
-                project_id=project_id,
-                quantity=quantity,
-                unit_price=unit_price,
-                supplier=supplier,
-                delivery_date=delivery_date,
-                invoice_number=invoice_number,
-                notes=notes,
-                received_by=request.user.customuser
-            )
-            
-            # Update material stock and price
-            material = Material.objects.get(id=material_id)
-            material.current_stock += Decimal(quantity)
-            material.unit_price = unit_price  # Update to latest price
-            material.save()
-            
-            messages.success(request, 'Delivery recorded successfully!')
-            return redirect('material_detail', material_id=material_id)
-            
-        except Exception as e:
-            messages.error(request, f'Error recording delivery: {str(e)}')
-            return redirect('record_delivery')
-    
-    # Get active projects and materials for the form
-    projects = Project.objects.filter(status='ONGOING')
-    materials = Material.objects.all()
-    
+        form = MaterialDeliveryForm(request.POST)
+        if form.is_valid():
+            try:
+                transaction = form.save(commit=False)
+                transaction.transaction_type = 'delivery'
+                transaction.warehouse = form.cleaned_data['warehouse']
+                transaction.created_by = request.user
+                transaction.save()
+
+                # Update material stock
+                material = transaction.material
+                material.current_stock = F('current_stock') + transaction.quantity
+                material.unit_price = transaction.unit_price  # Update to latest price
+                material.save()
+
+                messages.success(request, 'Delivery recorded successfully!')
+                return redirect('myapp:material_detail', material_id=material.id)
+            except Exception as e:
+                messages.error(request, f'Error recording delivery: {str(e)}')
+                return redirect('myapp:record_delivery')
+    else:
+        form = MaterialDeliveryForm()
+
     return render(request, 'myapp/materials/delivery_form.html', {
-        'projects': projects,
-        'materials': materials
+        'form': form,
+        'title': 'Record Material Delivery'
     })
 
 # Category Management Views
@@ -1504,83 +1493,6 @@ def material_transaction(request):
     return render(request, 'myapp/material_transaction.html', context)
 
 @login_required
-def record_delivery(request):
-    """View for recording material deliveries."""
-    if request.method == 'POST':
-        material = get_object_or_404(Material, id=request.POST.get('material'))
-        warehouse = get_object_or_404(Warehouse, id=request.POST.get('warehouse'))
-        quantity = Decimal(request.POST.get('quantity'))
-        unit_price = Decimal(request.POST.get('unit_price') or 0)
-
-        # Create the transaction
-        transaction = MaterialTransaction.objects.create(
-            material=material,
-            warehouse=warehouse,
-            transaction_type='delivery',
-            quantity=quantity,
-            unit_price=unit_price,
-            supplier=request.POST.get('supplier'),
-            invoice_number=request.POST.get('invoice_number'),
-            notes=request.POST.get('notes'),
-        )
-        transaction.log_action('CREATE', user=request.user.customuser, request=request)
-
-        # Update material stock
-        material.current_stock += quantity
-        material.save()
-        material.log_action('UPDATE', user=request.user.customuser, request=request)
-
-        messages.success(request, 'Material delivery recorded successfully.')
-        return redirect('myapp:material_transaction')
-
-    context = {
-        'materials': Material.objects.all(),
-        'warehouses': Warehouse.objects.all(),
-    }
-    return render(request, 'myapp/record_delivery.html', context)
-
-@login_required
-def record_consumption(request):
-    """View for recording material consumption."""
-    if request.method == 'POST':
-        material = get_object_or_404(Material, id=request.POST.get('material'))
-        warehouse = get_object_or_404(Warehouse, id=request.POST.get('warehouse'))
-        project = get_object_or_404(Project, id=request.POST.get('project'))
-        quantity = Decimal(request.POST.get('quantity'))
-
-        # Check if enough stock is available
-        if material.current_stock < quantity:
-            messages.error(request, f'Not enough stock! Available: {material.current_stock} {material.unit}')
-            return redirect('myapp:materials_consumption')
-        
-        # Create the transaction
-        transaction = MaterialTransaction.objects.create(
-            material=material,
-            warehouse=warehouse,
-            project=project,
-            transaction_type='consumption',
-            quantity=-quantity,  # Negative quantity for consumption
-            unit_price=material.unit_price,
-            notes=request.POST.get('notes'),
-        )
-        transaction.log_action('CREATE', user=request.user.customuser, request=request)
-
-        # Update material stock
-        material.current_stock -= quantity
-        material.save()
-        material.log_action('UPDATE', user=request.user.customuser, request=request)
-
-        messages.success(request, 'Material consumption recorded successfully.')
-        return redirect('myapp:material_transaction')
-
-    context = {
-        'materials': Material.objects.all(),
-        'warehouses': Warehouse.objects.all(),
-        'projects': Project.objects.all(),
-    }
-    return render(request, 'myapp/record_consumption.html', context)
-
-@login_required
 def subcontractor_dashboard(request):
     """Dashboard view for subcontractor management."""
     # Get subcontractor statistics
@@ -1664,20 +1576,23 @@ def cost_dashboard(request):
     ).annotate(
         total=ExpressionWrapper(
             F('quantity') * F('unit_price'),
-            output_field=DecimalField()
+            output_field=DecimalField(max_digits=10, decimal_places=2)
         )
     ).aggregate(
-        total=Coalesce(Sum('total'), Value(0, output_field=DecimalField()))
+        total=Coalesce(Sum('total'), Value(0, output_field=DecimalField(max_digits=10, decimal_places=2)))
     )['total']
     
     # Get costs by project
     project_costs = Project.objects.annotate(
         material_costs=Coalesce(
             Sum(
-                F('material_transactions__quantity') * F('material_transactions__unit_price'),
+                ExpressionWrapper(
+                    F('material_transactions__quantity') * F('material_transactions__unit_price'),
+                    output_field=DecimalField(max_digits=10, decimal_places=2)
+                ),
                 filter=Q(material_transactions__transaction_type='DELIVERY')
             ),
-            Value(0, output_field=DecimalField())
+            Value(0, output_field=DecimalField(max_digits=10, decimal_places=2))
         )
     ).order_by('-material_costs')[:5]
     
@@ -1688,8 +1603,11 @@ def cost_dashboard(request):
         'material__category__name'
     ).annotate(
         total_cost=Sum(
-            F('quantity') * F('unit_price'),
-            output_field=DecimalField()
+            ExpressionWrapper(
+                F('quantity') * F('unit_price'),
+                output_field=DecimalField(max_digits=10, decimal_places=2)
+            ),
+            output_field=DecimalField(max_digits=10, decimal_places=2)
         )
     ).order_by('-total_cost')[:5]
     
@@ -1701,7 +1619,7 @@ def cost_dashboard(request):
     ).annotate(
         total_cost=ExpressionWrapper(
             F('quantity') * F('unit_price'),
-            output_field=DecimalField()
+            output_field=DecimalField(max_digits=10, decimal_places=2)
         )
     ).order_by('-date')[:10]
     
@@ -1712,7 +1630,7 @@ def cost_dashboard(request):
         month=TruncMonth('date'),
         transaction_cost=ExpressionWrapper(
             F('quantity') * F('unit_price'),
-            output_field=DecimalField()
+            output_field=DecimalField(max_digits=10, decimal_places=2)
         )
     ).values('month').annotate(
         total=Sum('transaction_cost')
@@ -1946,144 +1864,91 @@ def maintenance_calendar(request):
     return render(request, 'myapp/maintenance_calendar.html', {'maintenance_records': maintenance_records})
 
 @login_required
-def material_delivery(request):
-    materials = Material.objects.all()
-    warehouses = Warehouse.objects.filter(is_active=True)
-    
-    # Get filter parameters
-    material_id = request.GET.get('material')
-    warehouse_id = request.GET.get('warehouse')
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
-    
-    # Base queryset
-    deliveries = MaterialTransaction.objects.filter(transaction_type='DELIVERY')
-    
-    # Apply filters
-    if material_id:
-        deliveries = deliveries.filter(material_id=material_id)
-    if warehouse_id:
-        deliveries = deliveries.filter(warehouse_id=warehouse_id)
-    if date_from:
-        deliveries = deliveries.filter(date__gte=date_from)
-    if date_to:
-        deliveries = deliveries.filter(date__lte=date_to)
-        
-    # Order by date
-    deliveries = deliveries.order_by('-date', '-created_at')
-    
-    # Handle form submission
+def record_delivery(request):
     if request.method == 'POST':
-        form = MaterialTransactionForm(request.POST)
+        form = MaterialDeliveryForm(request.POST)
         if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.transaction_type = 'DELIVERY'
-            transaction.created_by = request.user.customuser
-            transaction.save()
-            transaction.log_action('CREATE', user=request.user.customuser, request=request)
-            
-            # Update material stock
-            material = transaction.material
-            material.current_stock += transaction.quantity
-            material.save()
-            material.log_action('UPDATE', user=request.user.customuser, request=request)
-            
-            messages.success(request, 'Delivery recorded successfully.')
-            return redirect('myapp:material_delivery')
+            try:
+                transaction = form.save(commit=False)
+                transaction.transaction_type = 'delivery'
+                transaction.warehouse = form.cleaned_data['warehouse']
+                transaction.created_by = request.user
+                transaction.save()
+
+                # Update material stock
+                material = transaction.material
+                material.current_stock = F('current_stock') + transaction.quantity
+                material.unit_price = transaction.unit_price  # Update to latest price
+                material.save()
+
+                messages.success(request, 'Delivery recorded successfully!')
+                return redirect('myapp:material_detail', material_id=material.id)
+            except Exception as e:
+                messages.error(request, f'Error recording delivery: {str(e)}')
+                return redirect('myapp:record_delivery')
     else:
-        form = MaterialTransactionForm()
-    
-    # Pagination
-    paginator = Paginator(deliveries, 10)
-    page = request.GET.get('page')
-    deliveries = paginator.get_page(page)
-    
-    context = {
-        'deliveries': deliveries,
-        'materials': materials,
-        'warehouses': warehouses,
+        form = MaterialDeliveryForm()
+
+    return render(request, 'myapp/materials/delivery_form.html', {
         'form': form,
-        'selected_material': material_id,
-        'selected_warehouse': warehouse_id,
-        'date_from': date_from,
-        'date_to': date_to,
-    }
-    
-    return render(request, 'myapp/inventory/material_delivery.html', context)
+        'title': 'Record Material Delivery'
+    })
 
 @login_required
-def material_consumption(request):
-    materials = Material.objects.all()
-    warehouses = Warehouse.objects.filter(is_active=True)
-    projects = Project.objects.filter(status='ACTIVE')
-    
-    # Get filter parameters
-    material_id = request.GET.get('material')
-    warehouse_id = request.GET.get('warehouse')
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
-    
-    # Base queryset
-    consumptions = MaterialTransaction.objects.filter(transaction_type='CONSUMPTION')
-    
-    # Apply filters
-    if material_id:
-        consumptions = consumptions.filter(material_id=material_id)
-    if warehouse_id:
-        consumptions = consumptions.filter(warehouse_id=warehouse_id)
-    if date_from:
-        consumptions = consumptions.filter(date__gte=date_from)
-    if date_to:
-        consumptions = consumptions.filter(date__lte=date_to)
-        
-    # Order by date
-    consumptions = consumptions.order_by('-date', '-created_at')
-    
-    # Handle form submission
+def record_consumption(request):
     if request.method == 'POST':
-        form = MaterialTransactionForm(request.POST)
-        if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.transaction_type = 'CONSUMPTION'
-            transaction.created_by = request.user.customuser
-            
+        material_id = request.POST.get('material')
+        warehouse_id = request.POST.get('warehouse')
+        project_id = request.POST.get('project')
+        task_id = request.POST.get('task')
+        quantity = request.POST.get('quantity')
+        notes = request.POST.get('notes', '')
+
+        try:
+            material = Material.objects.get(id=material_id)
+            warehouse = Warehouse.objects.get(id=warehouse_id)
+            project = Project.objects.get(id=project_id)
+            task = Task.objects.get(id=task_id)
+            quantity = Decimal(quantity)
+
             # Check if there's enough stock
-            if transaction.quantity > transaction.material.current_stock:
-                messages.error(request, 'Not enough stock available.')
-                return redirect('myapp:material_consumption')
-                
-            transaction.save()
-            transaction.log_action('CREATE', user=request.user.customuser, request=request)
-            
+            if quantity > material.current_stock:
+                messages.error(request, f'Not enough stock available for {material.name}')
+                return redirect('myapp:record_consumption')
+
+            # Create material transaction
+            MaterialTransaction.objects.create(
+                material=material,
+                warehouse=warehouse,
+                project=project,
+                task=task,
+                transaction_type='consumption',
+                quantity=quantity,
+                notes=notes,
+                created_by=request.user
+            )
+
             # Update material stock
-            material = transaction.material
-            material.current_stock -= transaction.quantity
+            material.current_stock = F('current_stock') - quantity
             material.save()
-            material.log_action('UPDATE', user=request.user.customuser, request=request)
-            
-            messages.success(request, 'Consumption recorded successfully.')
-            return redirect('myapp:material_consumption')
-    else:
-        form = MaterialTransactionForm()
-    
-    # Pagination
-    paginator = Paginator(consumptions, 10)
-    page = request.GET.get('page')
-    consumptions = paginator.get_page(page)
-    
+
+            messages.success(request, f'Successfully recorded consumption of {quantity} {material.unit} of {material.name}')
+            return redirect('myapp:material_list')
+
+        except (Material.DoesNotExist, Warehouse.DoesNotExist, Project.DoesNotExist, Task.DoesNotExist):
+            messages.error(request, 'Invalid selection. Please check your inputs.')
+        except (ValueError, decimal.InvalidOperation):
+            messages.error(request, 'Invalid quantity value.')
+        except Exception as e:
+            messages.error(request, f'An error occurred: {str(e)}')
+
+    # GET request - show the form
     context = {
-        'consumptions': consumptions,
-        'materials': materials,
-        'warehouses': warehouses,
-        'projects': projects,
-        'form': form,
-        'selected_material': material_id,
-        'selected_warehouse': warehouse_id,
-        'date_from': date_from,
-        'date_to': date_to,
+        'materials': Material.objects.all(),
+        'warehouses': Warehouse.objects.all(),
+        'projects': Project.objects.all(),
     }
-    
-    return render(request, 'myapp/inventory/material_consumption.html', context)
+    return render(request, 'myapp/record_consumption.html', context)
 
 @login_required
 def material_transaction_list(request):
@@ -2420,3 +2285,43 @@ def audit_log_list(request):
     }
     
     return render(request, 'myapp/audit_log_list.html', context)
+
+@login_required
+def get_project_tasks(request, project_id):
+    """API endpoint to get tasks for a specific project"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+    
+    try:
+        project = Project.objects.get(id=project_id)
+        tasks = Task.objects.filter(project=project).values('id', 'name')
+        return JsonResponse(list(tasks), safe=False)
+    except Project.DoesNotExist:
+        return JsonResponse({'error': 'Project not found'}, status=404)
+
+@login_required
+def get_material_warehouses(request, material_id):
+    """API endpoint to get warehouses where a material is available."""
+    try:
+        material = get_object_or_404(Material, id=material_id)
+        # Get transactions grouped by warehouse with current stock
+        warehouse_stocks = MaterialTransaction.objects.filter(
+            material=material
+        ).values('warehouse').annotate(
+            stock=Sum(Case(
+                When(transaction_type='delivery', then=F('quantity')),
+                When(transaction_type='consumption', then=-F('quantity')),
+                default=0,
+                output_field=DecimalField()
+            ))
+        ).filter(stock__gt=0)
+
+        # Get warehouse names
+        warehouses = []
+        for stock in warehouse_stocks:
+            warehouse = Warehouse.objects.get(id=stock['warehouse'])
+            warehouses.append(f"{warehouse.name} ({stock['stock']} {material.unit})")
+
+        return JsonResponse({'warehouses': warehouses})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

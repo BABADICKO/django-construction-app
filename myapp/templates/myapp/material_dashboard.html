@@ -81,10 +81,10 @@
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Recent Transactions</h6>
                     <div>
-                        <a href="{% url 'myapp:materials_delivery' %}" class="btn btn-sm btn-success">
+                        <a href="{% url 'myapp:record_delivery' %}" class="btn btn-sm btn-success">
                             <i class="fas fa-plus"></i> Record Delivery
                         </a>
-                        <a href="{% url 'myapp:materials_consumption' %}" class="btn btn-sm btn-info">
+                        <a href="{% url 'myapp:record_consumption' %}" class="btn btn-sm btn-info">
                             <i class="fas fa-minus"></i> Record Consumption
                         </a>
                     </div>
@@ -182,7 +182,7 @@
                                     <td>{{ material.name }}</td>
                                     <td>{{ material.category.name }}</td>
                                     <td>
-                                        <a href="{% url 'myapp:materials_delivery' %}?material={{ material.id }}" 
+                                        <a href="{% url 'myapp:record_delivery' %}?material={{ material.id }}" 
                                            class="btn btn-sm btn-success">
                                             <i class="fas fa-plus"></i>
                                         </a>

@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Cost Dashboard</h1>
+
+    <!-- Total Material Cost Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Total Material Cost</h5>
+            <h2 class="text-primary">{{ total_material_cost|floatformat:2|intcomma }} FCFA</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Project Costs -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Top Projects by Cost</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Project</th>
+                                    <th>Material Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in project_costs %}
+                                <tr>
+                                    <td>{{ project.name }}</td>
+                                    <td>{{ project.material_costs|floatformat:2|intcomma }} FCFA</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Costs -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Costs by Category</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in costs_by_category %}
+                                <tr>
+                                    <td>{{ category.material__category__name }}</td>
+                                    <td>{{ category.total_cost|floatformat:2|intcomma }} FCFA</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Costs Chart -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Monthly Cost Trend</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Total Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cost in monthly_costs %}
+                        <tr>
+                            <td>{{ cost.month|date:"F Y" }}</td>
+                            <td>{{ cost.total|floatformat:2|intcomma }} FCFA</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Recent Material Transactions</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Project</th>
+                            <th>Material</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in recent_transactions %}
+                        <tr>
+                            <td>{{ transaction.date|date:"Y-m-d" }}</td>
+                            <td>{{ transaction.project.name }}</td>
+                            <td>{{ transaction.material.name }}</td>
+                            <td>{{ transaction.quantity|floatformat:2|intcomma }}</td>
+                            <td>{{ transaction.unit_price|floatformat:2|intcomma }} FCFA</td>
+                            <td>{{ transaction.total_cost|floatformat:2|intcomma }} FCFA</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

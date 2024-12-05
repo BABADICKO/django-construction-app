@@ -42,8 +42,8 @@ urlpatterns = [
     path('materials/<int:pk>/edit/', views.material_edit, name='material_edit'),
     path('materials/<int:pk>/delete/', views.material_delete, name='material_delete'),
     path('materials/import/', views.material_import, name='material_import'),
-    path('materials/delivery/', views.record_delivery, name='materials_delivery'),
-    path('materials/consumption/', views.record_consumption, name='materials_consumption'),
+    path('materials/delivery/', views.record_delivery, name='record_delivery'),
+    path('materials/consumption/', views.record_consumption, name='record_consumption'),
     path('materials/transactions/', views.material_transaction_list, name='material_transactions'),
     
     # Material Category URLs
@@ -65,8 +65,7 @@ urlpatterns = [
     path('inventory/warehouses/create/', views.create_warehouse, name='warehouse_create'),
     path('inventory/warehouses/<int:pk>/edit/', views.edit_warehouse, name='warehouse_edit'),
     path('inventory/stock/transfer/', views.stock_transfer, name='stock_transfer'),
-    path('inventory/transactions/delivery/', views.material_delivery, name='material_delivery'),
-    path('inventory/transactions/consumption/', views.material_consumption, name='material_consumption'),
+    path('inventory/transactions/', views.material_transaction_list, name='inventory_transactions'),
     
     # Subcontractor Management URLs
     path('subcontractors/dashboard/', views.subcontractor_dashboard, name='subcontractor_dashboard'),
@@ -97,6 +96,10 @@ urlpatterns = [
     path('users/', views.user_management, name='user_management'),
     path('users/<int:user_id>/change-role/', views.change_user_role, name='change_user_role'),
     path('users/<int:user_id>/toggle-active/', views.toggle_user_active, name='toggle_user_active'),
+    
+    # API Endpoints
+    path('api/projects/<int:project_id>/tasks/', views.get_project_tasks, name='get_project_tasks'),
+    path('api/materials/<int:material_id>/warehouses/', views.get_material_warehouses, name='get_material_warehouses'),
     
     # Removed duplicate audit log URL
 ]
